@@ -1,0 +1,40 @@
+window.BUDGET_APP_DEFAULT_SNAPSHOT_ROWS = [
+  { month: "2024-07", incomeObserved: 9900.94, incomeBackfill: 0, incomeTotalForMonth: 9900.94, baselineExpenses: 8812.24, cardPurchasesObserved: 2387.12, bankExpensesObserved: 2170.84, knownExpensesTotal: 13370.2, netObservedMinusKnownExpenses: -3469.26 },
+  { month: "2024-08", incomeObserved: 9901.01, incomeBackfill: 0, incomeTotalForMonth: 9901.01, baselineExpenses: 8812.24, cardPurchasesObserved: 816.91, bankExpensesObserved: 5248.98, knownExpensesTotal: 14878.13, netObservedMinusKnownExpenses: -4977.12 },
+  { month: "2024-09", incomeObserved: 18501.3, incomeBackfill: 0, incomeTotalForMonth: 18501.3, baselineExpenses: 8812.24, cardPurchasesObserved: 1558.78, bankExpensesObserved: 5736.57, knownExpensesTotal: 16107.59, netObservedMinusKnownExpenses: 2393.71 },
+  { month: "2024-10", incomeObserved: 13139.13, incomeBackfill: 0, incomeTotalForMonth: 13139.13, baselineExpenses: 8812.24, cardPurchasesObserved: 2321.27, bankExpensesObserved: 8050.49, knownExpensesTotal: 19184, netObservedMinusKnownExpenses: -6044.87 },
+  { month: "2024-11", incomeObserved: 13293.42, incomeBackfill: 0, incomeTotalForMonth: 13293.42, baselineExpenses: 8812.24, cardPurchasesObserved: 884.83, bankExpensesObserved: 3985.21, knownExpensesTotal: 13682.28, netObservedMinusKnownExpenses: -388.86 },
+  { month: "2024-12", incomeObserved: 13170.9, incomeBackfill: 0, incomeTotalForMonth: 13170.9, baselineExpenses: 8812.24, cardPurchasesObserved: 2295.68, bankExpensesObserved: 5056.08, knownExpensesTotal: 16164, netObservedMinusKnownExpenses: -2993.1 },
+  { month: "2025-01", incomeObserved: 10550.52, incomeBackfill: 0, incomeTotalForMonth: 10550.52, baselineExpenses: 8812.24, cardPurchasesObserved: 1593.66, bankExpensesObserved: 34652.92, knownExpensesTotal: 45058.82, netObservedMinusKnownExpenses: -34508.3 },
+  { month: "2025-02", incomeObserved: 9545.13, incomeBackfill: 0, incomeTotalForMonth: 9545.13, baselineExpenses: 8812.24, cardPurchasesObserved: 1140.45, bankExpensesObserved: 5202.92, knownExpensesTotal: 15155.61, netObservedMinusKnownExpenses: -5610.48 },
+  { month: "2025-03", incomeObserved: 9545.11, incomeBackfill: 0, incomeTotalForMonth: 9545.11, baselineExpenses: 8812.24, cardPurchasesObserved: 5196.3, bankExpensesObserved: 6125.16, knownExpensesTotal: 20133.7, netObservedMinusKnownExpenses: -10588.59 },
+  { month: "2025-04", incomeObserved: 9741.12, incomeBackfill: 0, incomeTotalForMonth: 9741.12, baselineExpenses: 8812.24, cardPurchasesObserved: 1023.29, bankExpensesObserved: 16682.64, knownExpensesTotal: 26518.17, netObservedMinusKnownExpenses: -16777.05 },
+  { month: "2025-05", incomeObserved: 9731.63, incomeBackfill: 0, incomeTotalForMonth: 9731.63, baselineExpenses: 8812.24, cardPurchasesObserved: 1224.28, bankExpensesObserved: 4774.53, knownExpensesTotal: 14811.05, netObservedMinusKnownExpenses: -5079.42 },
+  { month: "2025-06", incomeObserved: 9627.16, incomeBackfill: 0, incomeTotalForMonth: 9627.16, baselineExpenses: 8812.24, cardPurchasesObserved: 965.16, bankExpensesObserved: 8450.8, knownExpensesTotal: 18228.2, netObservedMinusKnownExpenses: -8601.04 },
+  { month: "2025-07", incomeObserved: 9175.93, incomeBackfill: 0, incomeTotalForMonth: 9175.93, baselineExpenses: 8812.24, cardPurchasesObserved: 3457.66, bankExpensesObserved: 6151.53, knownExpensesTotal: 18421.43, netObservedMinusKnownExpenses: -9245.5 },
+  { month: "2025-08", incomeObserved: 9024.8, incomeBackfill: 0, incomeTotalForMonth: 9024.8, baselineExpenses: 8812.24, cardPurchasesObserved: 687.87, bankExpensesObserved: 9657.64, knownExpensesTotal: 19157.75, netObservedMinusKnownExpenses: -10132.95 },
+  { month: "2025-09", incomeObserved: 18238.13, incomeBackfill: 0, incomeTotalForMonth: 18238.13, baselineExpenses: 8812.24, cardPurchasesObserved: 1300.29, bankExpensesObserved: 4565.25, knownExpensesTotal: 14677.78, netObservedMinusKnownExpenses: 3560.35 },
+  { month: "2025-10", incomeObserved: 12495.82, incomeBackfill: 0, incomeTotalForMonth: 12495.82, baselineExpenses: 8812.24, cardPurchasesObserved: 1439.16, bankExpensesObserved: 55449.71, knownExpensesTotal: 65701.11, netObservedMinusKnownExpenses: -53205.29 },
+  { month: "2025-11", incomeObserved: 13293.68, incomeBackfill: 0, incomeTotalForMonth: 13293.68, baselineExpenses: 8812.24, cardPurchasesObserved: 1228.88, bankExpensesObserved: 4319.71, knownExpensesTotal: 14360.83, netObservedMinusKnownExpenses: -1067.15 },
+  { month: "2025-12", incomeObserved: 13071.78, incomeBackfill: 0, incomeTotalForMonth: 13071.78, baselineExpenses: 8812.24, cardPurchasesObserved: 1250.51, bankExpensesObserved: 5728.48, knownExpensesTotal: 15791.23, netObservedMinusKnownExpenses: -2719.45 },
+  { month: "2026-01", incomeObserved: 9990.36, incomeBackfill: 0, incomeTotalForMonth: 9990.36, baselineExpenses: 8812.24, cardPurchasesObserved: 952.88, bankExpensesObserved: 6052.23, knownExpensesTotal: 15817.35, netObservedMinusKnownExpenses: -5826.99 },
+  { month: "2026-02", incomeObserved: 8935.04, incomeBackfill: 0, incomeTotalForMonth: 8935.04, baselineExpenses: 8812.24, cardPurchasesObserved: 1115.41, bankExpensesObserved: 14122.53, knownExpensesTotal: 24050.18, netObservedMinusKnownExpenses: -15115.14 },
+  { month: "2026-03", incomeObserved: 8934.97, incomeBackfill: 0, incomeTotalForMonth: 8934.97, baselineExpenses: 8812.24, cardPurchasesObserved: 890.22, bankExpensesObserved: 8764.36, knownExpensesTotal: 18466.82, netObservedMinusKnownExpenses: -9531.85 },
+  { month: "2026-04", incomeObserved: 7584.98, incomeBackfill: 0, incomeTotalForMonth: 7584.98, baselineExpenses: 8812.24, cardPurchasesObserved: 1124.55, bankExpensesObserved: 5855.58, knownExpensesTotal: 15792.37, netObservedMinusKnownExpenses: -8207.39 },
+  { month: "2026-05", incomeObserved: 7849.56, incomeBackfill: 0, incomeTotalForMonth: 7849.56, baselineExpenses: 8812.24, cardPurchasesObserved: 2035.76, bankExpensesObserved: 4699.21, knownExpensesTotal: 15547.21, netObservedMinusKnownExpenses: -7697.65 },
+  { month: "2026-06", incomeObserved: 13147.18, incomeBackfill: 0, incomeTotalForMonth: 13147.18, baselineExpenses: 8812.24, cardPurchasesObserved: 1240.8, bankExpensesObserved: 5528.42, knownExpensesTotal: 15581.46, netObservedMinusKnownExpenses: -2434.28 },
+  { month: "2026-07", incomeObserved: 0, incomeBackfill: 0, incomeTotalForMonth: 0, baselineExpenses: 8812.24, cardPurchasesObserved: 34.96, bankExpensesObserved: 2702.32, knownExpensesTotal: 11549.52, netObservedMinusKnownExpenses: -11549.52 }
+];
+
+window.BUDGET_APP_DEFAULT_BUDGET_BY_CATEGORY = {
+  water: 60,
+  food: 1500,
+  gas: 50,
+  "pest-control": 35,
+  maint: 500,
+  elias: 833.33,
+  teeth: 2083.33,
+  health: 250,
+  "penny-vet-vsists": 41.67,
+  entertainment: 75
+};

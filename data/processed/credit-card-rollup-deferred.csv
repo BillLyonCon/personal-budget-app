@@ -1,0 +1,2 @@
+"id","month","cardAccount","name","amount","basis","notes","reason","target_categories"
+"cc-rollup-amazon","2026-07","amazon-card","amazon","13.75","FIXED","","deferred_to_credit_card_statement_categories","food|restaurants|entertainment|gas|materials-clothing"

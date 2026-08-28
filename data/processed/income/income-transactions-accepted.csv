@@ -1,0 +1,5 @@
+"transactionDate","source","description","amount","isIncome","sourceStatement"
+"2026-05-29","microsoft","Microsoft Edipayment PPD ID: 9911144442","845.37","true","20260625-statements-7442- (1).txt"
+"2026-06-15","microsoft","Microsoft Edipayment PPD ID: 9911144442","744.52","true","20260625-statements-7442- (1).txt"
+"2026-06-24","social-security","SSA Treas 310 Xxsoc Sec PPD ID: 9031036360","4732","true","20260625-statements-7442- (1).txt"
+"2026-06-25","interest","Interest Payment","0.54","true","20260625-statements-7442- (1).txt"

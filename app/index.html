@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fname's Personal Budget Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top-menu" id="top-menu">
+    <div class="menu-left">
+      <button class="menu-toggle" id="menu-toggle" aria-label="Toggle navigation">&#9776;</button>
+      <div class="brand-mark" aria-hidden="true"></div>
+      <div class="brand-text">Fname's Personal Budget</div>
+    </div>
+
+    <nav class="menu-links" id="menu-links">
+      <a href="#dashboard" data-route="dashboard" class="menu-link active">Dashboard</a>
+      <a href="#months" data-route="months" class="menu-link">Months</a>
+      <a href="#pipeline" data-route="pipeline" class="menu-link">Import Pipeline</a>
+      <a href="#profile" data-route="profile" class="menu-link">Profile</a>
+      <a href="#notes" data-route="notes" class="menu-link">Notes</a>
+    </nav>
+
+    <div class="menu-right">
+      <label class="btn btn-ghost" for="csv-input">Load Snapshot CSV</label>
+      <input id="csv-input" type="file" accept=".csv,text/csv">
+      <button class="btn btn-solid" id="load-default">Use Snapshot</button>
+    </div>
+  </header>
+
+  <section class="masthead" id="dashboard">
+    <div>
+      <h1 class="masthead-title">Income vs Expense Snapshot</h1>
+      <p class="masthead-subtitle">Upload statements. Get monthly cashflow and budget tracking.</p>
+    </div>
+    <div class="masthead-meta">
+      <div id="months-loaded">Months loaded: --</div>
+      <div id="last-run">Last pipeline run: --</div>
+    </div>
+  </section>
+
+  <main class="page-shell">
+    <section class="panel controls-panel" data-route="dashboard">
+      <div class="control-group">
+        <label for="month-select">Selected month <span class="help-tip" tabindex="0" data-tip="Controls KPI cards and month-specific breakdowns.">?</span></label>
+        <select id="month-select"></select>
+      </div>
+      <div class="control-group">
+        <label for="year-select">Tracking year <span class="help-tip" tabindex="0" data-tip="Controls annual budget tracking and year-to-date guidance.">?</span></label>
+        <select id="year-select"></select>
+      </div>
+      <div class="control-group status" id="status-line">No data loaded yet.</div>
+    </section>
+
+    <section class="kpi-grid" id="kpi-grid" data-route="dashboard">
+      <article class="kpi-card kpi-accent" title="Total income for the selected month.">
+        <div class="kpi-label">Income Total <span class="help-tip" tabindex="0" data-tip="Total income for the selected month.">?</span></div>
+        <div class="kpi-value" id="kpi-income">--</div>
+      </article>
+      <article class="kpi-card kpi-amber" title="Mode-aware expense total used in net math. Cashflow: all bank debits (including card payments). Budget: card purchases + bank expenses excluding card-payment transfers.">
+        <div class="kpi-label">Known Expenses <span class="help-tip" tabindex="0" data-tip="Mode-aware expense total used in net math. Cashflow uses all bank debits; Budget uses card purchases + bank expenses excluding card-payment transfers.">?</span></div>
+        <div class="kpi-value" id="kpi-expense">--</div>
+      </article>
+      <article class="kpi-card" id="kpi-net-card" title="Income minus Known Expenses for the selected month.">
+        <div class="kpi-label">Net Result <span class="help-tip" tabindex="0" data-tip="Income minus Known Expenses for the selected month.">?</span></div>
+        <div class="kpi-value" id="kpi-net">--</div>
+      </article>
+      <article class="kpi-card" title="Mode-dependent card context. In cashflow this is card payments from bank debits; in budget this is card purchases from card feeds.">
+        <div class="kpi-label">Card Spend (Info) <span class="help-tip" tabindex="0" data-tip="Mode-dependent card context. Cashflow shows card payments; Budget shows card purchases.">?</span></div>
+        <div class="kpi-value" id="kpi-card">--</div>
+      </article>
+      <article class="kpi-card" title="Bank debit expenses observed for the selected month.">
+        <div class="kpi-label">Bank Expenses <span class="help-tip" tabindex="0" data-tip="Bank debit expenses observed for the selected month.">?</span></div>
+        <div class="kpi-value" id="kpi-bank">--</div>
+      </article>
+      <article class="kpi-card" title="Monthly budget baseline used for budget planning calculations.">
+        <div class="kpi-label">Baseline Expenses <span class="help-tip" tabindex="0" data-tip="Monthly budget baseline used for planning calculations.">?</span></div>
+        <div class="kpi-value" id="kpi-base">--</div>
+      </article>
+    </section>
+
+    <section class="panel mode-diff-panel" id="mode-diff-panel" data-route="dashboard">
+      <div class="mode-diff-title">Cashflow vs Budget Difference <span class="help-tip" tabindex="0" data-tip="Cashflow known expenses minus Budget known expenses for the selected month. Positive values usually mean paying prior-cycle card balances.">?</span></div>
+      <div class="mode-diff-note" id="mode-diff-note">Run imports to view month-level mode reconciliation details.</div>
+    </section>
+
+    <section class="panel flagged-panel" data-route="dashboard">
+      <div class="panel-header">
+        <h2>Flagged Transactions</h2>
+        <p class="flagged-subtitle">Transactions ≥ $10,000 (automatically excluded from category analysis)</p>
+      </div>
+      <div id="flagged-transactions">Loading...</div>
+    </section>
+
+    <section class="panel" data-route="dashboard">
+      <div class="panel-header">
+        <h2>Annualized Budget Tracking (Cumulative)</h2>
+      </div>
+      <div class="line-legend">
+        <span class="legend-item"><span class="legend-swatch budget"></span>Budget to Date</span>
+        <span class="legend-item"><span class="legend-swatch actual"></span>Actual to Date</span>
+      </div>
+      <div class="annual-summary-grid">
+        <article class="annual-card" title="Monthly baseline multiplied by 12 for the selected tracking year.">
+          <div class="annual-label">Annual Budget <span class="help-tip" tabindex="0" data-tip="Monthly baseline multiplied by 12 for this year.">?</span></div>
+          <div class="annual-value" id="annual-budget">--</div>
+        </article>
+        <article class="annual-card" title="Observed spending accumulated through the latest loaded month in the selected year.">
+          <div class="annual-label">Actual YTD (Observed) <span class="help-tip" tabindex="0" data-tip="Observed spending accumulated through the latest loaded month.">?</span></div>
+          <div class="annual-value" id="annual-actual-ytd">--</div>
+        </article>
+        <article class="annual-card" title="Annual budget minus observed year-to-date spending.">
+          <div class="annual-label">Budget Remaining <span class="help-tip" tabindex="0" data-tip="Annual budget minus observed year-to-date spending.">?</span></div>
+          <div class="annual-value" id="annual-remaining">--</div>
+        </article>
+        <article class="annual-card" title="How much monthly spend needs to change in remaining months to align with annual budget.">
+          <div class="annual-label">Needed Monthly Reduction <span class="help-tip" tabindex="0" data-tip="How much monthly spend needs to change in remaining months to align with annual budget.">?</span></div>
+          <div class="annual-value" id="annual-reduction">--</div>
+        </article>
+      </div>
+      <div class="line-chart-wrap" id="dashboard-trendlines"></div>
+    </section>
+
+    <section class="panel" data-route="dashboard">
+      <div class="panel-header">
+        <h2>Annual Guidance</h2>
+      </div>
+      <div class="spike-narrative" id="spike-narrative"></div>
+    </section>
+
+    <section class="panel" id="months" data-route="months">
+      <div class="panel-header">
+        <h2>Monthly Net Trend</h2>
+      </div>
+      <div class="trend-list" id="trend-list"></div>
+    </section>
+
+    <section class="panel" data-route="months">
+      <div class="panel-header">
+        <h2>Category Budget vs Actual (Selected Month)</h2>
+      </div>
+      <div class="category-legend">
+        <span class="legend-item"><span class="legend-swatch budget"></span>Budget</span>
+        <span class="legend-item"><span class="legend-swatch actual"></span>Actual</span>
+      </div>
+      <div class="category-chart" id="category-chart"></div>
+    </section>
+
+    <section class="panel" id="pipeline" data-route="pipeline">
+      <div class="panel-header">
+        <h2>Import Inputs & Results</h2>
+      </div>
+      <p class="import-procedures-link">
+        <a href="../docs/csv-intake-workflow.md" target="_blank" rel="noopener noreferrer">📋 View CSV Export & Import Procedures</a>
+      </p>
+      <div class="import-grid">
+        <div class="import-field file-field">
+          <label for="bank-csv-input">1. Bank statement CSV (income + expenses)</label>
+          <input id="bank-csv-input" type="file" accept=".csv,text/csv">
+        </div>
+        <div class="import-field file-field">
+          <label for="card1-csv-input">2. Credit card CSV (Amazon card)</label>
+          <input id="card1-csv-input" type="file" accept=".csv,text/csv">
+        </div>
+        <div class="import-field file-field">
+          <label for="card2-csv-input">3. Credit card CSV (day-to-day card)</label>
+          <input id="card2-csv-input" type="file" accept=".csv,text/csv">
+        </div>
+        <div class="import-field">
+          <label for="baseline-input">Baseline monthly expenses <span class="help-tip" tabindex="0" data-tip="Monthly baseline budget (typically annual budget divided by 12). Used for planning and annual tracking.">?</span></label>
+          <div class="money-input-wrap">
+            <span class="money-prefix" aria-hidden="true">$</span>
+            <input id="baseline-input" type="number" step="0.01" value="8812.24" title="Monthly baseline budget (typically annual budget divided by 12).">
+          </div>
+        </div>
+        <div class="import-field calc-mode-field">
+          <label for="calc-mode-input">Calculation mode <span class="help-tip" tabindex="0" data-tip="Use Cashflow mode to match real bank balance movement (credits in, debits out). Use Budget mode to compare observed spending against baseline budget.">?</span></label>
+          <select id="calc-mode-input" title="Cashflow mode uses bank credits/debits. Budget mode uses observed spend (card purchases + bank expenses excluding card-payment transfers) for budget comparison.">
+            <option value="cashflow" selected>Cashflow actual (bank credits vs bank debits)</option>
+            <option value="budget">Budget + observed spending (advanced)</option>
+          </select>
+        </div>
+      </div>
+      <div class="import-actions">
+        <button class="btn btn-solid-dark" id="run-imports" title="Recompute dashboard results from uploaded raw files using the selected calculation mode.">Show Results in UI</button>
+        <button class="btn" id="download-computed" title="Export currently computed monthly rows as CSV.">Download Computed Snapshot CSV</button>
+        <button class="btn" id="clear-imports" title="Clear selected files from upload fields.">Clear Uploads</button>
+      </div>
+      <p class="import-help">
+        Priority path: use Cashflow actual mode for validation against bank balance trends.
+      </p>
+      <p class="import-mode-note" id="pipeline-mode-summary">Known Expenses currently follows cashflow mode: all bank debits (including card payments).</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th class="right">Income</th>
+              <th class="right" id="known-expenses-header">Known Expenses (Cashflow)</th>
+              <th class="right">Net</th>
+            </tr>
+          </thead>
+          <tbody id="snapshot-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel" id="notes" data-route="notes">
+      <div class="panel-header">
+        <h2>Data Notes</h2>
+      </div>
+      <ul class="notes-list">
+        <li>Bank CSV is source of truth for Zelle/check-mailing expenses when available.</li>
+        <li>Credit card expenses are from card activity CSV sale lines only.</li>
+        <li>To compute in-browser results: upload bank CSV + 2 credit card CSV files in Import Pipeline, then click Show Results in UI.</li>
+        <li>The top-right Load Snapshot CSV option is optional and only for already-built snapshot files.</li>
+      </ul>
+    </section>
+
+    <section class="panel" id="profile" data-route="profile">
+      <div class="panel-header">
+        <h2>Profile Inputs</h2>
+      </div>
+      <div class="profile-grid">
+        <div class="import-field">
+          <label for="profile-name-input">Name</label>
+          <input id="profile-name-input" type="text" placeholder="Your name or household label" maxlength="80">
+        </div>
+        <div class="import-field">
+          <label for="profile-bank-resource-input">Primary bank resource</label>
+          <input id="profile-bank-resource-input" type="text" placeholder="Example: Chase Checking" maxlength="80">
+        </div>
+        <div class="import-field">
+          <label for="profile-baseline-input">Default monthly baseline budget</label>
+          <div class="money-input-wrap">
+            <span class="money-prefix" aria-hidden="true">$</span>
+            <input id="profile-baseline-input" type="number" step="0.01" min="0" placeholder="8812.24">
+          </div>
+        </div>
+        <div class="import-field">
+          <label for="profile-mode-input">Preferred calculation mode</label>
+          <select id="profile-mode-input">
+            <option value="cashflow">Cashflow actual (bank credits vs bank debits)</option>
+            <option value="budget">Budget + observed spending (advanced)</option>
+          </select>
+        </div>
+        <div class="import-field">
+          <label for="profile-savings-goal-input">Monthly savings goal (optional)</label>
+          <div class="money-input-wrap">
+            <span class="money-prefix" aria-hidden="true">$</span>
+            <input id="profile-savings-goal-input" type="number" step="0.01" min="0" placeholder="0.00">
+          </div>
+        </div>
+      </div>
+      <div class="profile-actions">
+        <button class="btn btn-solid-dark" id="save-profile">Save Profile</button>
+        <button class="btn" id="reset-profile">Reset Profile</button>
+      </div>
+      <p class="profile-status" id="profile-status">Saved profile values are stored in this browser and used as defaults for imports.</p>
+    </section>
+  </main>
+
+  <script src="default-data.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

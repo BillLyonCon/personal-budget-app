@@ -1,0 +1,6 @@
+item,monthly_amount,daily_amount,quarterly_amount,yearly_amount,basis,notes
+mort,2200.00,,,26400.00,FIXED,balance due 1-2026 267182
+water,60.00,,,720.00,ESTIMATED,
+food,1500.00,50.00,,18000.00,ESTIMATED,
+car insurance,60.83,,182.50,730.00,FIXED,
+teeth,2083.33,,,25000.00,CALCULATED,annual estimate
