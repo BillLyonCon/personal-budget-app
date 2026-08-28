@@ -1,4 +1,3 @@
-const DEFAULT_SNAPSHOT_PATH = "../data/processed/income-vs-expense-snapshot.csv";
 const BANK_EXPENSES_DETAIL_PATH = "../data/processed/expenses/bank-statements/bank-expenses-from-csv.csv";
 const VENDOR_MAPPING_PATH = "../data/processed/vendor-category-mapping.csv";
 const STORAGE_ROWS_KEY = "budgetApp.rows.v1";
@@ -537,13 +536,6 @@ function parseDateToMonth(dateValue) {
   }
 
   return "";
-}
-
-function isSnapshotShape(rows) {
-  if (!rows.length) return false;
-  const first = rows[0];
-  return Object.prototype.hasOwnProperty.call(first, "month") &&
-    Object.prototype.hasOwnProperty.call(first, "knownExpensesTotal");
 }
 
 function isCardTransferDescription(desc) {
@@ -1433,14 +1425,9 @@ function downloadComputedSnapshotCsv() {
 }
 
 async function loadDefaultCsv(options = {}) {
-  const interactive = Boolean(options.interactive);
-  const embeddedRows = Array.isArray(window.BUDGET_APP_DEFAULT_SNAPSHOT_ROWS)
-    ? window.BUDGET_APP_DEFAULT_SNAPSHOT_ROWS
-    : [];
-
-  // Preferred default path on startup: restore any local computed state.
-  // Snapshot should only be forced when the user explicitly clicks "Use Snapshot".
-  if (!interactive && tryRestoreComputedState() && state.meta.source === "pipeline-import") {
+  // No snapshot available - only pipeline imports supported
+  // Try to restore last pipeline import from localStorage
+  if (tryRestoreComputedState() && state.meta.source === "pipeline-import") {
     const calcModeEl = document.getElementById("calc-mode-input");
     const preferredMode = (state.meta.calcMode === "budget" || state.meta.calcMode === "cashflow")
       ? state.meta.calcMode
@@ -1460,49 +1447,9 @@ async function loadDefaultCsv(options = {}) {
     return true;
   }
 
-  // On startup, do not auto-load snapshot files. This keeps pipeline data
-  // as the default decision basis unless user explicitly requests snapshot.
-  if (!interactive) {
-    setStatus("No saved local import found. Use Import Pipeline, or click Use Snapshot explicitly.");
-    return false;
-  }
-
-  try {
-    const text = await readTextFromUrl(DEFAULT_SNAPSHOT_PATH);
-    state.rows = parseCsv(text).sort((a, b) => a.month.localeCompare(b.month));
-    if (!state.rows.length) {
-      throw new Error("Snapshot parsed with zero rows");
-    }
-    persistComputedState({ source: "snapshot-default", importedAt: new Date().toISOString() });
-    renderAll();
-    return true;
-  } catch (err) {
-    if (tryRestoreComputedState()) {
-      renderAll();
-      setStatus("Restored your last computed results from browser storage.");
-      return true;
-    }
-
-    if (embeddedRows.length) {
-      state.rows = embeddedRows.slice().sort((a, b) => String(a.month || "").localeCompare(String(b.month || "")));
-      persistComputedState({ source: "embedded-default", importedAt: new Date().toISOString() });
-      renderAll();
-      setStatus("Loaded embedded default snapshot data for file mode.");
-      return true;
-    }
-
-    if (interactive) {
-      setStatus("Default snapshot load is blocked in this browser mode. Select the snapshot CSV file now.");
-      const csvInput = document.getElementById("csv-input");
-      if (csvInput) csvInput.click();
-    } else if (window.location.protocol === "file:") {
-      setStatus("Could not auto-load snapshot file in file mode. Click Use Snapshot or Load Snapshot CSV.");
-    } else {
-      setStatus("Could not auto-load snapshot file. Use Load CSV or import 3 raw files.");
-    }
-
-    return false;
-  }
+  // No saved data and no snapshot available
+  setStatus("No data loaded. Use Import Pipeline to upload statements.");
+  return false;
 }
 
 async function parseInputFile(inputId) {
@@ -1645,29 +1592,7 @@ function bindUi() {
   updateBrandingFromProfile();
   applyProfileToUi();
 
-  document.getElementById("load-default").addEventListener("click", () => {
-    loadDefaultCsv({ interactive: true });
-  });
-
-  document.getElementById("csv-input").addEventListener("change", async (evt) => {
-    const file = evt.target.files && evt.target.files[0];
-    if (!file) return;
-
-    const text = await file.text();
-    const parsed = parseCsv(text);
-
-    if (!isSnapshotShape(parsed)) {
-      setStatus("This is a raw activity CSV. Use Import Pipeline and click Show Results in UI after uploading all 3 files.");
-      applyRoute("pipeline");
-      window.location.hash = "pipeline";
-      return;
-    }
-
-    state.rows = parsed.sort((a, b) => a.month.localeCompare(b.month));
-    state.categoryActualByMonth = {};
-    persistComputedState({ source: "snapshot-csv", importedAt: new Date().toISOString() });
-    renderAll();
-  });
+  // Pipeline-only workflow - no snapshot buttons
 
   document.getElementById("run-imports").addEventListener("click", runRawImports);
   document.getElementById("download-computed").addEventListener("click", downloadComputedSnapshotCsv);
