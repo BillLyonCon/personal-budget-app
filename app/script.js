@@ -401,16 +401,7 @@ function parseBudgetCategoryCsv(csvText) {
 
 async function loadVendorMapping() {
   try {
-    // Handle both file:// and http:// protocols
-    let vendorPath;
-    if (window.location.protocol === 'file:') {
-      // Use absolute file:// path on local file protocol
-      vendorPath = 'file:///C:/dev/personal-budget-app/data/processed/vendor-category-mapping.csv';
-    } else {
-      // Use relative path on http://localhost
-      vendorPath = VENDOR_MAPPING_PATH;
-    }
-    const text = await readTextFromUrl(vendorPath);
+    const text = await readTextFromUrl(VENDOR_MAPPING_PATH);
     const rows = parseCsv(text);
     const mapping = {};
 
@@ -478,15 +469,7 @@ async function loadVendorMapping() {
 async function loadBudgetCategories() {
   try {
     // Try to load budget v2 file
-    // Handle both file:// and http:// protocols
-    let budgetPath;
-    if (window.location.protocol === 'file:') {
-      // Use absolute file:// path on local file protocol
-      budgetPath = 'file:///C:/dev/personal-budget-app/data/processed/budget-categories.csv';
-    } else {
-      // Use relative path on http://localhost
-      budgetPath = VENDOR_MAPPING_PATH.replace('vendor-category-mapping.csv', 'budget-categories.csv');
-    }
+    const budgetPath = VENDOR_MAPPING_PATH.replace('vendor-category-mapping.csv', 'budget-categories.csv');
     const text = await readTextFromUrl(budgetPath);
     const rows = parseCsv(text);
     const categories = {};
