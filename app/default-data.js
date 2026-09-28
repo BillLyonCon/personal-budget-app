@@ -27,13 +27,6 @@ window.BUDGET_APP_DEFAULT_SNAPSHOT_ROWS = [
 ];
 
 window.BUDGET_APP_DEFAULT_BUDGET_BY_CATEGORY = {
-  water: 60,
-  food: 1500,
-  gas: 50,
-  "pest-control": 35,
-  maint: 500,
-  elias: 833.33,
-  teeth: 2083.33,
-  health: 250,
-  entertainment: 75
+  // Note: budget categories are now loaded from budget-categories.csv
+  // Keeping only a minimal set of defaults for development/fallback
 };
