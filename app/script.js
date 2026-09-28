@@ -535,6 +535,13 @@ async function loadBudgetCategories() {
     // Merge with any existing defaults, with loaded data taking precedence
     state.budgetByCategory = { ...state.budgetByCategory, ...budgetByCategory };
     console.log("[BUDGET BY CATEGORY] Updated from loaded file:", Object.keys(budgetByCategory).length, "categories");
+    console.log("[BUDGET BY CATEGORY] Keys:", Object.keys(budgetByCategory).join(", "));
+    if ("Mortgage" in budgetByCategory) {
+      console.log("[MORTGAGE DEBUG] Mortgage found in budgetByCategory:", budgetByCategory["Mortgage"]);
+    } else {
+      console.log("[MORTGAGE DEBUG] WARNING: Mortgage NOT found in budgetByCategory");
+      console.log("[MORTGAGE DEBUG] All category keys:", Object.keys(budgetByCategory));
+    }
   } catch (e) {
     console.warn("Could not load budget categories; continuing without budget data", e);
     state.budgetCategories = {};
@@ -1146,6 +1153,14 @@ function renderCategoryChart(month) {
   const actualMap = mergeForChart(state.categoryActualByMonth[month] || {});
   const budgetMap = mergeForChart(state.budgetByCategory || {});
   const categories = Array.from(new Set([...Object.keys(actualMap), ...Object.keys(budgetMap)]));
+
+  console.log("[CHART] Month:", month);
+  console.log("[CHART] Budget categories available:", Object.keys(budgetMap).join(", "));
+  console.log("[CHART] Actual categories for month:", Object.keys(actualMap).join(", "));
+  console.log("[CHART] Combined categories to render:", categories.join(", "));
+  if ("Mortgage" in budgetMap) {
+    console.log("[CHART] Mortgage budget amount:", budgetMap["Mortgage"]);
+  }
 
   if (!categories.length) {
     container.innerHTML = '<div class="cat-empty">No category data available for this month yet.</div>';
