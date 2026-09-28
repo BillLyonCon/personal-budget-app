@@ -14,27 +14,32 @@
 3. On app startup, vendor mappings load from `vendor-category-mapping.csv`
 
 **CSV columns from blyon budget.csv:**
-- `Category` — Budget category name (e.g., "food", "utilities")
-- `VENDOR` — Comma-delimited vendor/merchant names to match
-- `CHASE CREDIT CARD CATEGORY` — Optional secondary reference
+- `Budget Category` — Category name (e.g., "Mortgage", "Groceries", "Utilities")
+- `Monthly` — Monthly budget amount for this category
+- `Daily` — Optional daily breakdown (for variable expenses)
+- `QTR` — Optional quarterly budget amount
+- `Annual` — Annual budget total (for reference/verification)
+- Column 6 — Budget type: **FIXED** (recurring/stable) or **ESTIMATED** (variable/average)
+- `VENDOR (comma delimited) - from Bank statement CSV Description column` — Comma-delimited merchant patterns matched against **both bank and credit card transaction descriptions** for automatic categorization
+- `CHASE CREDIT CARD CATEGORY - from card statements- CATEGORY column` — Reference only; shows what Chase calls this category (not used in matching)
+
+**How vendor matching works during transaction import:**
+1. When you upload bank/credit card CSV files, each transaction's merchant description is checked against the VENDOR column patterns
+2. Matching is case-insensitive with two-tier approach:
+   - **Exact match** (after lowercase/space normalization): e.g., "netflix.com" matches "NETFLIX.COM"
+   - **Partial match fallback**: e.g., "publix" matches "PUBLIX SUPER MARKET" 
+3. **Vendor matching applies to both bank and card transactions** — uses same logic for both
+4. If vendor matches → transaction categorized automatically
+5. If no match → falls back to built-in inference heuristics
+6. Category actuals tracked separately for budget variance reporting
 
 **Example rows:**
 ```
-Category,VENDOR,CHASE CREDIT CARD CATEGORY
-mortgage,JPMORGAN CHASE   CHASE ACH,
-food,"NORTHWEST SEAFOOD,PUBLIX,Fresh market",Groceries
-streaming,"Netflix.com,HBO,QOBUZ",Bills & Utilities
-utilities,"VERIZON WIRELESS,FPL",Bills & Utilities
+Budget Category,Monthly,Daily,QTR,Annual,,VENDOR (comma delimited) - from Bank statement CSV Description column,CHASE CREDIT CARD CATEGORY - from card statements- CATEGORY column
+Mortgage,"$2,200.00 ",,,"$26,400.00 ", FIXED ,JPMORGAN CHASE   CHASE ACH,
+Groceries,"$1,500.00 ",$50.00 ,,"$18,000.00 ", ESTIMATED ,"NORTHWEST SEAFOOD,PUBLIX,Fresh market, Uppercrust,",Groceries
+Streaming,$75.00 ,,,$900.00 , ESTIMATED ,"Netflix.com,HBO,QOBUZ",Bills & Utilities
 ```
-
-**How vendor matching works during transaction import:**
-1. When you upload bank/credit card CSV files, each transaction's merchant name is checked
-2. Matching is case-insensitive with two-tier approach:
-   - **Exact match** (after lowercase): e.g., "netflix.com" matches "NETFLIX.COM"
-   - **Partial match fallback**: e.g., "publix" matches "PUBLIX SUPER MARKET"
-3. If vendor matches → transaction categorized automatically
-4. If no match → falls back to description-based category inference
-5. Category actuals tracked separately for budget variance reporting
 
 **Update workflow:**
 1. Edit vendor patterns in `data/blyon budget.csv`
@@ -92,17 +97,17 @@ Use CSV as the primary source when your bank supports direct download.
 
 ## Processing Your CSV
 
-After uploading your files in the web UI, the app automatically processes them and computes your monthly snapshot. No additional steps are required.
+After uploading your files in the web UI, the app automatically processes them and categorizes transactions using vendor mappings. No additional steps required.
 
 ## Advanced: Manual batch processing with scripts
 
-For developers or batch processing workflows, CSVs can also be placed in raw folders and processed via command line:
+For developers or batch processing workflows, CSVs can also be parsed via command line:
 
 **Where to place files for scripts:**
 
 - Bank account activity CSVs (checking/savings):
-  - data/raw/income
-- Credit card CSVs (if available):
+  - data/raw/expenses/bank-statements
+- Credit card CSVs:
   - data/raw/expenses/credit-cards
 
 ### Parse bank transactions CSV
@@ -110,29 +115,25 @@ For developers or batch processing workflows, CSVs can also be placed in raw fol
 Run:
 
 powershell
-./scripts/parse-bank-transactions-csv.ps1 -InputCsv "data/raw/income/<your-file>.csv" -TreatAllCreditsAsIncome
+./scripts/parse-bank-transactions-csv.ps1 -InputCsv "data/raw/expenses/bank-statements/<your-file>.csv" -TreatAllCreditsAsIncome
 
 Outputs:
-- data/processed/income/income-transactions-from-csv.csv
 - data/processed/expenses/bank-statements/bank-expenses-from-csv.csv
 - data/processed/expenses/bank-statements/bank-transactions-csv-rejected.csv
 
-### Build snapshot
+### Parse credit card transactions CSV
 
 Run:
 
 powershell
-./scripts/build-income-vs-expense-snapshot.ps1
+./scripts/parse-credit-card-activity-csv.ps1 -InputCsv "data/raw/expenses/credit-cards/<your-file>.csv"
 
-Snapshot output:
-- data/processed/income-vs-expense-snapshot.csv
+Outputs:
+- data/processed/expenses/credit-cards/credit-card-transactions-from-csv.csv
+- data/processed/expenses/credit-cards/credit-card-transactions-rejected.csv
 
 ## Notes
 
-- Snapshot now combines both income sources if present:
-  - PDF-derived income: data/processed/income/income-transactions-accepted.csv
-  - CSV-derived income: data/processed/income/income-transactions-from-csv.csv
-- Snapshot uses bank expenses in this priority order:
-  - CSV parse: data/processed/expenses/bank-statements/bank-expenses-from-csv.csv
-  - Web-paste parse fallback: data/processed/expenses/bank-statements/zelle-payment-activity-parsed.csv
-- To avoid double counting, do not ingest the same transactions from multiple sources for the same date range.
+- All transaction data flows through the import pipeline in the app
+- Avoid ingesting the same transactions from multiple sources for the same date range to prevent double counting
+- Vendor matching is case-insensitive with two-tier approach: exact match first, then substring containment

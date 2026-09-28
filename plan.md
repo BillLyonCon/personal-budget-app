@@ -9,7 +9,7 @@ Build a personal budget application from scratch with mobile and desktop browser
 - Repository: personal-budget-app
 - Delivery order: web app first
 - Storage: local-only in v1
-- Import methods: manual paste + CSV/XLS upload
+- Import methods: CSV file upload (bank and credit card statements)
 - Playwright capture: deferred to post-MVP
 
 ## Phase Plan
@@ -45,7 +45,6 @@ Core entities:
 - ExpenseEntry
 - BudgetCategory
 - SavingsGoal
-- MonthSnapshot
 - ImportBatch
 
 Exit criteria:
@@ -55,7 +54,7 @@ Exit criteria:
 ## Phase 3 - Import and Calculation Engine
 
 Goals:
-- Parse pasted statement data and CSV/XLS files
+- Parse CSV statement data from bank and credit card uploads
 - Calculate monthly totals and variance
 - Produce dashboard-ready metrics
 

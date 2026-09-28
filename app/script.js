@@ -1026,6 +1026,7 @@ function renderKpis(month) {
   renderModeDifferenceCallout(month);
 
   renderFlaggedTransactions(month);
+  renderCategoryChart(month);
   renderDashboardTrendlines();
   renderSpikeNarrative();
 }
@@ -1591,6 +1592,11 @@ function bindUi() {
   state.profile = loadProfileFromStorage();
   updateBrandingFromProfile();
   applyProfileToUi();
+
+  // Initialize default budget categories for chart rendering
+  if (window.BUDGET_APP_DEFAULT_BUDGET_BY_CATEGORY) {
+    state.budgetByCategory = { ...window.BUDGET_APP_DEFAULT_BUDGET_BY_CATEGORY };
+  }
 
   // Pipeline-only workflow - no snapshot buttons
 

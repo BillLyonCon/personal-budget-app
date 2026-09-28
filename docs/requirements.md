@@ -19,8 +19,7 @@ Give a single user clear monthly visibility into spending, income, and savings p
 - User can set due date and expected monthly amount.
 
 3. Expense ingestion
-- User can paste tabular transaction text.
-- User can upload CSV and XLS statement files.
+- User can upload CSV statement files from banks and credit cards.
 - System validates schema and reports row-level errors.
 
 4. Categorization

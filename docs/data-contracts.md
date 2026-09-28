@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define v1 input and output contracts for manual entry and statement imports.
+Define v1 input and output contracts for CSV statement imports.
 
 ## Core Types
 
@@ -62,7 +62,7 @@ Fields:
 Fields:
 - id: string
 - createdAt: string (ISO timestamp)
-- sourceType: string (paste | csv | xls)
+- sourceType: string (csv)
 - sourceName: string optional
 - totalRows: integer
 - acceptedRows: integer
@@ -70,25 +70,7 @@ Fields:
 
 ## Import Input Contracts
 
-## Paste Import Row
-
-Required columns:
-- transactionDate
-- merchant
-- amount
-
-Optional columns:
-- postDate
-- description
-- category
-- account
-
-Rules:
-- amount must parse as positive number
-- dates must be valid ISO-like date or mappable format
-- empty merchant rows rejected
-
-## CSV/XLS Import
+## CSV Import
 
 Minimum required columns (case-insensitive mapping):
 - date or transactionDate

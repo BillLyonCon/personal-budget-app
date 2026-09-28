@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Category Chart Sandbox Test</title>
+  <style>
+    :root {
+      --accent: #0078d4;
+      --text: #111827;
+      --text-secondary: #4b5563;
+      --border: #d7dce2;
+      --bg: #f4f5f7;
+      --surface: #ffffff;
+      --radius: 12px;
+      --shadow: 0 1px 3px rgba(0, 0, 0, .1), 0 2px 6px rgba(0, 0, 0, .06);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 2rem;
+    }
+
+    .test-container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .test-header {
+      background: linear-gradient(125deg, #0f172a, #1e3a8a);
+      color: #fff;
+      padding: 1.5rem;
+      border-radius: var(--radius);
+      margin-bottom: 2rem;
+      box-shadow: var(--shadow);
+    }
+
+    .test-header h1 {
+      margin: 0 0 0.5rem 0;
+      font-size: 1.8rem;
+    }
+
+    .test-header p {
+      margin: 0;
+      opacity: 0.9;
+      font-size: 0.95rem;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow);
+    }
+
+    .panel h2 {
+      margin: 0 0 1rem 0;
+      font-size: 1.1rem;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 0.5rem;
+    }
+
+    .control-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .control-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 0.35rem;
+    }
+
+    .control-group input,
+    .control-group select {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    button {
+      padding: 0.6rem 1rem;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    button:hover {
+      background: #005a9e;
+    }
+
+    button.secondary {
+      background: var(--text-secondary);
+    }
+
+    button.secondary:hover {
+      background: var(--text);
+    }
+
+    #category-chart {
+      margin-top: 1rem;
+    }
+
+    /* Chart styles from main app */
+    .cat-row {
+      display: grid;
+      grid-template-columns: 130px 1fr 210px;
+      gap: .65rem;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .cat-row:last-child {
+      border-bottom: none;
+    }
+
+    .cat-name {
+      font-size: .82rem;
+      color: var(--text-secondary);
+      text-transform: capitalize;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 600;
+    }
+
+    .cat-bars {
+      display: grid;
+      gap: .22rem;
+    }
+
+    .cat-track {
+      height: 8px;
+      border-radius: 999px;
+      background: #eef2f7;
+      overflow: hidden;
+    }
+
+    .cat-bar {
+      height: 100%;
+      border-radius: 999px;
+    }
+
+    .cat-bar.budget { 
+      background: linear-gradient(90deg, #fbbf24, #d97706);
+    }
+
+    .cat-bar.actual { 
+      background: linear-gradient(90deg, #60a5fa, #2563eb);
+    }
+
+    .cat-values {
+      text-align: right;
+      font-size: .78rem;
+      color: var(--text-secondary);
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+    }
+
+    .cat-empty {
+      color: var(--text-secondary);
+      font-size: .86rem;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .legend {
+      display: flex;
+      gap: 2rem;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .legend-color {
+      width: 20px;
+      height: 10px;
+      border-radius: 4px;
+    }
+
+    .legend-color.budget {
+      background: linear-gradient(90deg, #fbbf24, #d97706);
+    }
+
+    .legend-color.actual {
+      background: linear-gradient(90deg, #60a5fa, #2563eb);
+    }
+
+    .debug-section {
+      background: #f5f5f5;
+      border: 1px dashed #999;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-top: 1rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .debug-log {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.4;
+    }
+
+    .success {
+      color: #107c10;
+      font-weight: 600;
+    }
+
+    .error {
+      color: #d83b01;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="test-container">
+    <div class="test-header">
+      <h1>📊 Category Chart Sandbox Test</h1>
+      <p>Isolated testing environment for the Category Budget vs Actual chart. No dashboard dependencies.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Test Data Controls</h2>
+      
+      <div class="control-group">
+        <div>
+          <label>Test Month</label>
+          <select id="monthSelect">
+            <option value="2026-07">July 2026</option>
+            <option value="2026-08" selected>August 2026</option>
+            <option value="2026-09">September 2026</option>
+            <option value="2026-YTD">YTD 2026</option>
+          </select>
+        </div>
+        <div>
+          <label>Scale Factor</label>
+          <input type="number" id="scaleFactor" value="1" min="0.5" max="3" step="0.5">
+        </div>
+      </div>
+
+      <div class="button-group">
+        <button onclick="renderChartWithData()">Render Chart</button>
+        <button class="secondary" onclick="addRandomData()">Add Random Category</button>
+        <button class="secondary" onclick="clearDebugLog()">Clear Log</button>
+      </div>
+
+      <div class="debug-section">
+        <pre class="debug-log" id="debugLog"></pre>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Chart Preview</h2>
+      
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-color budget"></div>
+          <span>Budget (Monthly Amount)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color actual"></div>
+          <span>Actual (Transaction Sum)</span>
+        </div>
+      </div>
+
+      <div id="category-chart"></div>
+    </div>
+  </div>
+
+  <script>
+console.log("Script loaded");
+
+    // ========== MONEY FORMATTER ==========
+    const money = new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 2,
+    });
+
+    // ========== HELPER FUNCTIONS ==========
+    function toNum(v) {
+      if (!v) return 0;
+      const n = Number(String(v).replace(/[$,]/g, ""));
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function normalizeChartCategoryKey(category) {
+      const c = String(category || "").trim().toLowerCase();
+      if (!c) return "uncategorized";
+      if (c === "bank-other" || c === "card-other" || c === "other") return "uncategorized";
+      return c;
+    }
+
+    function categoryDisplayName(category) {
+      // Just return the category name as-is for display
+      return String(category).trim();
+    }
+
+    function mergeForChart(rawMap) {
+      const merged = {};
+      Object.keys(rawMap || {}).forEach((k) => {
+        const nk = normalizeChartCategoryKey(k);
+        merged[nk] = toNum(merged[nk]) + toNum(rawMap[k]);
+      });
+      return merged;
+    }
+
+    // ========== CHART RENDERING ==========
+    function renderCategoryChart(month, actualMap, budgetMap) {
+      log("debug", `renderCategoryChart called with month: ${month}`);
+      
+      const container = document.getElementById("category-chart");
+      if (!container) {
+        log("error", "Container #category-chart not found!");
+        return;
+      }
+
+      const mergedActuals = mergeForChart(actualMap || {});
+      const mergedBudgets = mergeForChart(budgetMap || {});
+      const categories = Array.from(new Set([...Object.keys(mergedActuals), ...Object.keys(mergedBudgets)]));
+
+      log("debug", `Found ${categories.length} categories: ${categories.join(", ")}`);
+
+      if (!categories.length) {
+        log("warn", "No category data found");
+        container.innerHTML = '<div class="cat-empty">No category data available for this month yet.</div>';
+        return;
+      }
+
+      categories.sort((a, b) => {
+        const av = Math.max(toNum(mergedActuals[a]), toNum(mergedBudgets[a]));
+        const bv = Math.max(toNum(mergedActuals[b]), toNum(mergedBudgets[b]));
+        return bv - av;
+      });
+
+      const maxVal = Math.max(1, ...categories.map((c) => Math.max(toNum(mergedActuals[c]), toNum(mergedBudgets[c]))));
+
+      log("debug", `Max value: $${maxVal.toFixed(2)}`);
+
+      container.innerHTML = categories.map((c) => {
+        const actual = toNum(mergedActuals[c]);
+        const budget = toNum(mergedBudgets[c]);
+        const aPct = Math.max(0, Math.round((actual / maxVal) * 100));
+        const bPct = Math.max(0, Math.round((budget / maxVal) * 100));
+        return `
+          <div class="cat-row">
+            <div class="cat-name">${categoryDisplayName(c)}</div>
+            <div class="cat-bars">
+              <div class="cat-track"><div class="cat-bar budget" style="width:${bPct}%"></div></div>
+              <div class="cat-track"><div class="cat-bar actual" style="width:${aPct}%"></div></div>
+            </div>
+            <div class="cat-values">Budget ${money.format(budget)} | Actual ${money.format(actual)}</div>
+          </div>
+        `;
+      }).join("");
+
+      log("success", `Chart rendered successfully with ${categories.length} categories`);
+    }
+
+    // ========== TEST DATA ==========
+    // Budget data embedded directly from vendor-category-mapping.csv (Column A and B)
+    const BUDGET_CSV_DATA = `Category, mo. , daily , QTR , yr. ,,VENDOR,CHASE CREDIT CARD CATEGORY,
+Mortgage,"$2,200.00 ",,,"$26,400.00 ", FIXED ,JPMORGAN CHASE   CHASE ACH,,"balance due 1-2026 $267,182"
+Water/electric,$60.00 ,,,$720.00 , ESTIMATED ,GAINESVILLE REGIONAL UTILITIES,,
+Climate First solar loan,$113.00 ,,,"$1,356.00 ", FIXED ,CLIMATE FIRST BA TRANSFER,,
+Pool,$165.00 ,,,"$1,980.00 ", FIXED ,Swim State Pool Service,,
+Groceries,"$1,500.00 ",$50.00 ,,"$18,000.00 ", ESTIMATED ,"NORTHWEST SEAFOOD MILH GAINESVILLE FL,PUBLIX,Fresh market, Uppercrust,",Groceries,
+Food & Drink,$200.00 ,,,"$2,400.00 ", ESTIMATED ,"TST*DRAGONFLY SUSHI &amp; SA,SQ *VERDE SPICE,FSP*SWAMP HEAD BREWERY,MILLHOPPER LIQUORS",Food & Drink,
+Gas,$50.00 ,,,$600.00 , ESTIMATED ,,Gas,
+Car loan payments,$650.00 ,,,"$7,800.00 ", FIXED ,FLORIDA CREDIT UNION LOAN,,"balance due 1-2026 11,103"
+Car insurance,$60.83 ,,$182.50 ,$730.00 , FIXED ,GEICO,,
+Pest service,$35.00 ,,$105.00 ,$420.00 , ESTIMATED ,ARROW EXTERMINATORS,,
+Home,$500.00 ,,,"$6,000.00 ", ESTIMATED ,"Mike Swal,LOWES,MILLHOPPER ACE",Home,
+Elias,$833.33 ,,,"$10,000.00 ", ESTIMATED ,"Wise Inc         WISE,WEIMARK APT RENTAL APP,Yak Management,",,
+Phone,$50.00 ,,,$600.00 , FIXED ,BOOST MOBILE,Bills & Utilities,
+Internet,$70.00 ,,,$840.00 , FIXED ,"COX COMMUNICATIONS,APPLE.COM",,
+Dental,"$2,083.33 ",,,"$25,000.00 ", ESTIMATED ,,,
+Health,$250.00 ,,,"$3,000.00 ", ESTIMATED ,CVS/PHARMACY #01815,,
+Penny vet visits,$41.67 ,,,$500.00 , ESTIMATED ,"PETDATA  INC.,SUBURBAN ANIMAL HO",Personal,
+Penny meds,$38.33 ,,,$460.00 , FIXED ,,,
+Dog tracker,$11.75 ,,,$141.00 , FIXED ,Tractive,,
+Streaming,$75.00 ,,,$900.00 , ESTIMATED ,"Netflix.com,HBO,QOBUZ",Bills & Utilities,
+Elias phone,$25.00 ,,,$300.00 , FIXED ,,,
+Amazon Prime,$13.75 ,,,$165.00 , FIXED ,Amazon Prime Membership,Shopping,`;
+
+    let budgetFromFile = {}; // Will be populated from budget CSV data
+    const testData = {
+      "2026-07": {
+        actuals: {}, // Will be populated from budgetFromFile keys
+      },
+      "2026-08": {
+        actuals: {},
+      },
+      "2026-09": {
+        actuals: {},
+      },
+      "2026-YTD": {
+        actuals: {},
+      },
+    };
+
+    function splitCsvLine(line) {
+      const result = [];
+      let current = "";
+      let insideQuotes = false;
+      
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        const nextChar = line[i + 1];
+        
+        if (char === '"') {
+          if (insideQuotes && nextChar === '"') {
+            current += '"';
+            i++;
+          } else {
+            insideQuotes = !insideQuotes;
+          }
+        } else if (char === "," && !insideQuotes) {
+          result.push(current);
+          current = "";
+        } else {
+          current += char;
+        }
+      }
+      result.push(current);
+      return result;
+    }
+
+    // Parse budget categories from embedded CSV data
+    function loadBudgetFromCsv() {
+      try {
+        log("info", "Parsing budget categories from embedded CSV...");
+        
+        const lines = BUDGET_CSV_DATA.split(/\r?\n/).filter(Boolean);
+        
+        if (lines.length < 2) {
+          log("error", "CSV data is empty");
+          return;
+        }
+
+        // Parse CSV lines (skip header line 0)
+        budgetFromFile = {};
+        lines.slice(1).forEach((line, idx) => {
+          const values = splitCsvLine(line);
+          if (!values[0] || !values[1]) return; // Skip rows with missing category or amount
+          
+          const category = values[0].trim();
+          const monthlyAmount = toNum(values[1].trim());
+          
+          if (monthlyAmount > 0 && category !== "SUM") {
+            budgetFromFile[category] = monthlyAmount;
+            log("debug", `Category: "${category}" => $${monthlyAmount.toFixed(2)}`);
+          }
+        });
+
+        log("success", `Loaded ${Object.keys(budgetFromFile).length} budget categories`);
+
+        // Populate test data with sample actuals for each budget category
+        populateTestActuals();
+      } catch (err) {
+        log("error", `Failed to parse CSV: ${err.message}`);
+      }
+    }
+
+    function populateTestActuals() {
+      log("info", "Loading test data for chart development...");
+      
+      // Use REAL August 2026 actuals from bank statement
+      const syntheticActuals = {
+        "2026-08": {
+          "Mortgage": 2169.11,
+          "Elias": 1274.45,
+          "Groceries": 757.13,
+          "Car loan payments": 640.15,
+          "Home": 167.59,
+          "Food & Drink": 159.06,
+          "Water/electric": 149.15,
+          "Climate First solar loan": 113.75,
+          "Internet": 101.46,
+          "Phone": 71.46,
+          "Streaming": 55.24,
+          "Penny vet visits": 27.00,
+          "Car insurance": 0,
+          "Pool": 0,
+          "Pest service": 0,
+          "Health": 0,
+          "Gas": 0,
+          "Dental": 0,
+          "Penny meds": 0,
+          "Dog tracker": 0,
+          "Elias phone": 0,
+          "Amazon Prime": 0,
+        },
+        "2026-YTD": {
+          "Mortgage": 17217.18,
+          "Car loan payments": 4481.05,
+          "Groceries": 3038.77,
+          "Pool": 2362.80,
+          "Climate First solar loan": 910.00,
+          "Elias": 861.76,
+          "Home": 766.85,
+          "Internet": 606.42,
+          "Streaming": 600.06,
+          "Food & Drink": 573.51,
+          "Water/electric": 521.45,
+          "Penny vet visits": 473.98,
+          "Gas": 443.46,
+          "Car insurance": 365.90,
+          "Pest service": 318.00,
+          "Phone": 178.86,
+          "Dog tracker": 106.60,
+          "Health": 5.26,
+          "Dental": 0,
+          "Penny meds": 0,
+          "Elias phone": 0,
+          "Amazon Prime": 0,
+        }
+      };
+
+      // For other months, use same pattern
+      ["2026-07", "2026-09"].forEach(month => {
+        testData[month].actuals = {};
+        Object.keys(budgetFromFile).forEach(cat => {
+          testData[month].actuals[cat] = syntheticActuals["2026-08"][cat] || 0;
+        });
+      });
+
+      // For YTD, use YTD actuals
+      testData["2026-YTD"].actuals = syntheticActuals["2026-YTD"];
+
+      // Use real August for testing
+      if (syntheticActuals["2026-08"]) {
+        testData["2026-08"].actuals = { ...syntheticActuals["2026-08"] };
+      }
+
+      const monthTotal = Object.values(testData["2026-08"].actuals).reduce((a, b) => a + toNum(b), 0);
+      log("success", `✓ Loaded real August 2026 bank actuals`);
+      log("debug", `Categories with actuals: ${Object.keys(testData["2026-08"].actuals).filter(k => testData["2026-08"].actuals[k] > 0).join(", ")}`);
+      log("debug", `Total actuals: $${monthTotal.toFixed(2)}`);
+      
+      setTimeout(() => renderChartWithData(), 300);
+    }
+
+    // ========== DEBUG LOGGING ==========
+    function log(level, msg) {
+      const logEl = document.getElementById("debugLog");
+      const timestamp = new Date().toLocaleTimeString();
+      let prefix = "[INFO] ";
+      if (level === "warn") prefix = "[WARN] ";
+      if (level === "error") prefix = "[ERROR] ";
+      if (level === "debug") prefix = "[DEBUG] ";
+      if (level === "success") prefix = "[✓] ";
+
+      const line = `${timestamp} ${prefix}${msg}`;
+      logEl.textContent += line + "\n";
+      logEl.scrollTop = logEl.scrollHeight;
+      console.log(line);
+    }
+
+    function clearDebugLog() {
+      document.getElementById("debugLog").textContent = "";
+      log("success", "Debug log cleared");
+    }
+
+    // ========== RENDER FUNCTIONS ==========
+    function renderChartWithData() {
+      const month = document.getElementById("monthSelect").value;
+      const scale = parseFloat(document.getElementById("scaleFactor").value) || 1;
+
+      log("info", `=== Rendering chart for ${month} (scale: ${scale}x) ===`);
+
+      if (!testData[month]) {
+        log("error", `No test data for month: ${month}`);
+        return;
+      }
+
+      const data = testData[month];
+      
+      // Apply scale factor to actuals
+      const scaledActuals = {};
+      const scaledBudgets = {};
+      
+      Object.keys(data.actuals).forEach(cat => {
+        scaledActuals[cat] = data.actuals[cat] * scale;
+      });
+      
+      // For YTD, multiply budget by 8 months; for other months, use as-is
+      const budgetMultiplier = month === "2026-YTD" ? 8 : 1;
+      
+      Object.keys(budgetFromFile).forEach(cat => {
+        scaledBudgets[cat] = budgetFromFile[cat] * budgetMultiplier * scale;
+      });
+
+      log("debug", `Actuals loaded: ${Object.keys(scaledActuals).length} categories`);
+      log("debug", `Budgets from file: ${Object.keys(scaledBudgets).length} categories (multiplier: ${budgetMultiplier}x)`);
+
+      try {
+        renderCategoryChart(month, scaledActuals, scaledBudgets);
+      } catch (err) {
+        log("error", `Chart render failed: ${err.message}`);
+        console.error(err);
+      }
+    }
+
+    function addRandomData() {
+      const month = document.getElementById("monthSelect").value;
+      const categories = ["Travel", "Insurance", "Education", "Maintenance", "Pet Care"];
+      const randomCat = categories[Math.floor(Math.random() * categories.length)];
+      const randomBudget = Math.floor(Math.random() * 500) + 50;
+      const randomActual = Math.floor(Math.random() * 600) + 50;
+
+      log("info", `Adding ${randomCat}: Budget $${randomBudget}, Actual $${randomActual}`);
+
+      budgetFromFile[randomCat] = randomBudget;
+      testData[month].actuals[randomCat] = randomActual;
+
+      renderChartWithData();
+    }
+
+    // ========== INITIALIZATION ==========
+    function init() {
+      console.log("init() called");
+      log("success", "✓ Test page initialized");
+      log("info", "Loading budget categories from CSV...");
+      try {
+        loadBudgetFromCsv();
+      } catch (err) {
+        log("error", `Init failed: ${err.message}`);
+        console.error(err);
+      }
+    }
+
+    if (document.readyState === "loading") {
+      console.log("DOM still loading, waiting...");
+      document.addEventListener("DOMContentLoaded", init);
+    } else {
+      console.log("DOM already loaded, initializing...");
+      init();
+    }
+  </script>
+</body>
+</html>

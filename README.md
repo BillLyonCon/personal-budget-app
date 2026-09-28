@@ -7,16 +7,16 @@ This project is a fresh start, inspired by the useful parts of the corporate bud
 ## Vision
 
 Track monthly financial health in one place:
-- Income and fixed obligations (mortgage, loans)
-- Daily expenses from card statements (paste or CSV/XLS upload)
+- Expense tracking from bank and credit card CSV statements
+- Auto-categorization using vendor mappings
 - Budget vs actual variance
 - Savings progress for rainy day fund and retirement
 
 ## MVP Scope (v1)
 
 Included:
-- Manual entry for income and fixed obligations
-- Expense import by paste and CSV/XLS upload
+- Expense import from bank and credit card CSV files
+- Auto-categorization using vendor mappings
 - Category mapping and monthly rollups
 - Monthly variance dashboard (income, expense, net)
 - Savings goal tracking (rainy day and retirement)
@@ -43,12 +43,11 @@ Not included in v1:
 
 ## Workflow Summary
 
-1. Import or paste expenses.
-2. Enter income and fixed obligations.
-3. Review categories and corrections.
-4. Compute monthly totals and variance.
-5. Review savings progress.
-6. Log work session outcomes in session log.
+1. Import bank and credit card statement CSVs through Import Pipeline.
+2. Transactions auto-categorized using vendor mappings.
+3. Review dashboard with monthly totals and variance.
+4. Adjust categories as needed.
+5. Track savings goals and annual budget progress.
 
 ## Progress Tracking
 
