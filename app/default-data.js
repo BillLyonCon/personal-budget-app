@@ -27,6 +27,31 @@ window.BUDGET_APP_DEFAULT_SNAPSHOT_ROWS = [
 ];
 
 window.BUDGET_APP_DEFAULT_BUDGET_BY_CATEGORY = {
-  // Note: budget categories are now loaded from budget-categories.csv
-  // Keeping only a minimal set of defaults for development/fallback
+  // Budget categories from budget v2, embedded for file:// protocol support
+  "Mortgage": 2200.00,
+  "Water/electric": 60.00,
+  "Climate First Solar loan": 113.00,
+  "Pool": 165.00,
+  "Groceries": 1500.00,
+  "Food & Drink": 200.00,
+  "Gas": 50.00,
+  "Car loan payments": 650.00,
+  "Bills & Utilities-car insurance": 60.83,
+  "Pest service": 35.00,
+  "Home-Zelle": 250.00,
+  "Home-Credit card": 250.00,
+  "Elias": 833.33,
+  "Bills & Utilities": 170.00, // $25 + $70 + $75 combined
+  "Dental": 2083.33,
+  "Health & Wellness": 250.00,
+  "Personal": 80.00, // Penny vet visits $41.67 + Penny meds $38.33
+  "Dog tracker": 11.75,
+  "Elias phone": 25.00,
+  "Shopping Chase": 1.00,
+  "Shopping-Amazon": 333.33,
+  "Travel": 166.67,
+  "Entertainment": 83.33,
+  "Education": 25.00,
+  "Automotive": 25.00,
+  "Gifts & Donations": 41.67
 };
