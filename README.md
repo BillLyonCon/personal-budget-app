@@ -49,6 +49,25 @@ Not included in v1:
 4. Adjust categories as needed.
 5. Track savings goals and annual budget progress.
 
+## Data Files
+
+**Budget Categories:** `data/blyon budget v2.csv`
+- Source of truth for budget category structure and subcategories
+- Column A: Budget Category name (e.g., "Bills & Utilities-car insurance")
+- Column B-E: Monthly, daily, quarterly, annual amounts
+- Loaded on app startup to support budget vs actual variance calculation and chart tooltips
+- **Always use v2 — older `blyon budget.csv` and `blyon budget OLD.csv` are deprecated**
+
+**Vendor Category Mapping:** `data/processed/vendor-category-mapping.csv`
+- Maps bank statement vendors to credit card categories
+- Used to auto-categorize bank transactions (ACH, billpay, Zelle)
+- Links vendors from bank CSV Description column to category names
+
+**Transaction Data:** Import via Import Pipeline tab
+- Bank statements: CSV files in `data/raw/`
+- Credit card statements: CSV files in `data/raw/` with CATEGORY column (Column D)
+- Both stored in localStorage after import; persists across page reload
+
 ## Progress Tracking
 
 Session logging is required.

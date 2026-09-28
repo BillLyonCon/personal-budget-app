@@ -18,6 +18,7 @@ const state = {
   categoryActualByMonth: {}, // { "2026-07": { food: 1847.50, gas: 150.00, ... } }
   categoryVarianceByMonth: {}, // { "2026-07": { food: { budget: 1500, actual: 1847.50, variance: -347.50 }, ... } }
   budgetByCategory: {},
+  budgetCategories: {}, // { "Groceries": { category: "Groceries", monthly: "$1,500.00", annual: "$18,000.00" }, ... }
   vendorMapping: {}, // { vendorPattern: budgetCategory, ... }
   selectedMonth: "",
   selectedYear: "",
@@ -457,6 +458,65 @@ async function loadVendorMapping() {
   } catch (e) {
     console.warn("Could not load vendor mapping; continuing with empty mapping", e);
     state.vendorMapping = {};
+  }
+}
+
+async function loadBudgetCategories() {
+  try {
+    // Try to load budget v2 file
+    const budgetPath = VENDOR_MAPPING_PATH.replace('vendor-category-mapping.csv', 'budget-categories.csv');
+    const text = await readTextFromUrl(budgetPath);
+    const rows = parseCsv(text);
+    const categories = {};
+
+    rows.forEach((r) => {
+      // Extract Budget Category (Column A)
+      let budgetCategory = null;
+      for (const key of Object.keys(r)) {
+        const k = key.trim().toLowerCase();
+        if (k.includes('budget') && k.includes('category')) {
+          budgetCategory = String(r[key] || "").trim();
+          break;
+        }
+      }
+
+      if (!budgetCategory) return;
+
+      // Extract Monthly amount (Column B)
+      let monthly = "0";
+      for (const key of Object.keys(r)) {
+        const k = key.trim().toLowerCase();
+        if (k === 'monthly' || k === 'monthly ') {
+          monthly = String(r[key] || "0").trim();
+          break;
+        }
+      }
+
+      // Extract Annual amount (Column E)
+      let annual = "0";
+      for (const key of Object.keys(r)) {
+        const k = key.trim().toLowerCase();
+        if (k === 'annual' || k === 'annual ') {
+          annual = String(r[key] || "0").trim();
+          break;
+        }
+      }
+
+      categories[budgetCategory] = {
+        category: budgetCategory,
+        monthly: monthly,
+        annual: annual
+      };
+    });
+
+    state.budgetCategories = categories;
+    console.log("[BUDGET CATEGORIES] Loaded", Object.keys(categories).length, "budget categories");
+    Object.keys(categories).slice(0, 3).forEach(k => {
+      console.log(`  "${k}" → monthly: ${categories[k].monthly}, annual: ${categories[k].annual}`);
+    });
+  } catch (e) {
+    console.warn("Could not load budget categories; continuing without budget data", e);
+    state.budgetCategories = {};
   }
 }
 
@@ -1470,6 +1530,12 @@ async function runRawImports() {
       console.log("[IMPORT] Vendor mapping empty, loading now...");
       await loadVendorMapping();
     }
+
+    // Ensure budget categories are loaded
+    if (Object.keys(state.budgetCategories).length === 0) {
+      console.log("[IMPORT] Budget categories empty, loading now...");
+      await loadBudgetCategories();
+    }
     
     const required = ["bank-csv-input", "card1-csv-input", "card2-csv-input"];
     const missing = required.filter((id) => {
@@ -1686,6 +1752,20 @@ function bindUi() {
   });
 
   applyRoute(routeFromHash());
+
+  // Preload vendor mapping and budget categories in the background
+  (async () => {
+    try {
+      if (Object.keys(state.vendorMapping).length === 0) {
+        await loadVendorMapping();
+      }
+      if (Object.keys(state.budgetCategories).length === 0) {
+        await loadBudgetCategories();
+      }
+    } catch (e) {
+      console.warn("[INIT] Background preload failed (will retry on import):", e);
+    }
+  })();
 }
 
 bindUi();
