@@ -514,6 +514,22 @@ async function loadBudgetCategories() {
     Object.keys(categories).slice(0, 3).forEach(k => {
       console.log(`  "${k}" → monthly: ${categories[k].monthly}, annual: ${categories[k].annual}`);
     });
+
+    // Populate budgetByCategory for chart rendering
+    // Extract monthly amounts and convert to numbers for the chart
+    const budgetByCategory = {};
+    Object.entries(categories).forEach(([catName, catData]) => {
+      const monthlyStr = String(catData.monthly || "0").trim();
+      const monthlyNum = toNum(monthlyStr);
+      if (monthlyNum > 0) {
+        // Use category name as-is for now (can be normalized later if needed)
+        budgetByCategory[catName] = monthlyNum;
+      }
+    });
+    
+    // Merge with any existing defaults, with loaded data taking precedence
+    state.budgetByCategory = { ...state.budgetByCategory, ...budgetByCategory };
+    console.log("[BUDGET BY CATEGORY] Updated from loaded file:", Object.keys(budgetByCategory).length, "categories");
   } catch (e) {
     console.warn("Could not load budget categories; continuing without budget data", e);
     state.budgetCategories = {};
