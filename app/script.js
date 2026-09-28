@@ -1769,17 +1769,44 @@ function bindUi() {
 
   applyRoute(routeFromHash());
 
-  // Preload vendor mapping and budget categories in the background
+  // Load vendor mapping and budget categories, then attempt to restore from localStorage
   (async () => {
     try {
+      // Load vendor mapping first (needed by restoration logic)
       if (Object.keys(state.vendorMapping).length === 0) {
+        console.log("[INIT] Loading vendor mapping...");
         await loadVendorMapping();
       }
+      
+      // Load budget categories
       if (Object.keys(state.budgetCategories).length === 0) {
+        console.log("[INIT] Loading budget categories...");
         await loadBudgetCategories();
       }
+
+      // Attempt to restore pipeline import from localStorage
+      if (tryRestoreComputedState() && state.meta.source === "pipeline-import") {
+        const calcMode = state.meta.calcMode || "cashflow";
+        const calcModeEl = document.getElementById("calc-mode-input");
+        if (calcModeEl) calcModeEl.value = calcMode;
+
+        const applied = applySavedModeRows(calcMode);
+        if (!applied) {
+          state.rows = normalizeRowsForMode(state.rows, calcMode);
+          renderAll();
+        }
+
+        const when = formatImportedAt(state.meta.importedAt);
+        setStatus(when
+          ? `Restored last pipeline import (${calcMode} mode) from ${when}.`
+          : `Restored last pipeline import (${calcMode} mode).`);
+      } else {
+        console.log("[INIT] No saved pipeline import found");
+        setStatus("No data loaded. Use Import Pipeline to upload statements.");
+      }
     } catch (e) {
-      console.warn("[INIT] Background preload failed (will retry on import):", e);
+      console.warn("[INIT] Initialization failed:", e);
+      setStatus("No data loaded. Use Import Pipeline to upload statements.");
     }
   })();
 }
