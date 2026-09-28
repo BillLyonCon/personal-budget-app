@@ -35,6 +35,5 @@ window.BUDGET_APP_DEFAULT_BUDGET_BY_CATEGORY = {
   elias: 833.33,
   teeth: 2083.33,
   health: 250,
-  "penny-vet-vsists": 41.67,
   entertainment: 75
 };
