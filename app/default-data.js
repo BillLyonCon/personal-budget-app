@@ -27,31 +27,34 @@ window.BUDGET_APP_DEFAULT_SNAPSHOT_ROWS = [
 ];
 
 window.BUDGET_APP_DEFAULT_BUDGET_BY_CATEGORY = {
-  // Budget categories from budget v2, embedded for file:// protocol support
+  // Budget categories from budget v2, consolidated and matched to vendor mapping
   "Mortgage": 2200.00,
   "Water/electric": 60.00,
-  "Climate First Solar loan": 113.00,
+  "Climate First solar loan": 113.00,
   "Pool": 165.00,
   "Groceries": 1500.00,
   "Food & Drink": 200.00,
   "Gas": 50.00,
   "Car loan payments": 650.00,
-  "Bills & Utilities-car insurance": 60.83,
+  "Car insurance": 60.83,
   "Pest service": 35.00,
-  "Home-Zelle": 250.00,
-  "Home-Credit card": 250.00,
+  "Home": 500.00, // Consolidated: Home-Zelle ($250) + Home-Credit card ($250)
   "Elias": 833.33,
-  "Bills & Utilities": 170.00, // $25 + $70 + $75 combined
+  "Phone": 50.00,
+  "Internet": 70.00,
   "Dental": 2083.33,
-  "Health & Wellness": 250.00,
-  "Personal": 80.00, // Penny vet visits $41.67 + Penny meds $38.33
+  "Health": 250.00,
+  "Personal": 80.00, // Penny vet visits + Penny meds combined
   "Dog tracker": 11.75,
+  "Streaming": 75.00,
   "Elias phone": 25.00,
-  "Shopping Chase": 1.00,
-  "Shopping-Amazon": 333.33,
+  "Shopping": 334.33, // Consolidated: Shopping Chase ($1) + Shopping-Amazon ($333.33)
+  "Amazon Prime": 13.75,
   "Travel": 166.67,
   "Entertainment": 83.33,
   "Education": 25.00,
   "Automotive": 25.00,
-  "Gifts & Donations": 41.67
+  "Gifts & Donations": 41.67,
+  "Propane": 0.00, // Placeholder - get amount from budget file
+  "Taxes": 0.00 // Placeholder - get amount from budget file
 };
