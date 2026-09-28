@@ -406,26 +406,31 @@ async function loadVendorMapping() {
     const mapping = {};
 
     rows.forEach((r) => {
-      // Handle both old header names and new names from blyon budget.csv
-      // Try multiple variations including trimmed versions
+      // Look for "Category" or similar in Column A
       let category = null;
-      let vendors = null;
-      
-      // Check for category (try all variations)
       for (const key of Object.keys(r)) {
         const k = key.trim().toLowerCase();
-        if (k === 'category' || k === 'budgetcategory') {
-          category = String(r[key] || "").trim();
-          break;
+        // Match headers like "Category", "Budget Category", "budgetcategory"
+        if (k === 'category' || k.includes('category')) {
+          const val = String(r[key] || "").trim();
+          if (val && val !== "SUM" && !val.startsWith("=")) {
+            category = val;
+            break;
+          }
         }
       }
       
-      // Check for vendor patterns (try all variations)
+      // Look for "VENDOR" or similar in Column G
+      let vendors = null;
       for (const key of Object.keys(r)) {
         const k = key.trim().toLowerCase();
-        if (k === 'vendor' || k === 'vendorpatterns') {
-          vendors = String(r[key] || "").trim();
-          break;
+        // Match headers like "VENDOR", "Vendor", "VENDOR PATTERNS", etc.
+        if (k === 'vendor' || k.includes('vendor')) {
+          const val = String(r[key] || "").trim();
+          if (val && val.length > 0) {
+            vendors = val;
+            break;
+          }
         }
       }
 
