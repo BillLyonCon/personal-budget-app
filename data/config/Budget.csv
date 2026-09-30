@@ -1,24 +1,24 @@
-Category,Subcategory, Monthly Budget 
-Mortgage,Mortgage,"$2,200.00 "
-Bills & Utilities,Water & Electric,$60.00 
-Solar loan,Climate First solar loan,$113.00 
-Bills & Utilities,Pool service,$175.00 
-Groceries,Groceries,"$1,200.00 "
-Food & Drink,"Liquor, Restaurant",$350.00 
-Gas,Gas,$50.00 
-Automotive,Car loan,$650.00 
-Automotive,Car insurance,$60.83 
-Bills & Utilities,Pest service,$35.00 
-Home,Home maintenance,$500.00 
-Elias,Elias support,$833.33 
-Bills & Utilities,Phone,$50.00 
-Bills & Utilities,Internet,$70.00 
-Health & Wellness,Dental,"$2,000.00 "
-Health & Wellness,CVS pharmacy,$50.00 
-Health & Wellness,Penny vet visits,$41.67 
-Bills & Utilities,Penny meds,$38.33 
-Bills & Utilities,Dog tracker,$11.75 
-Bills & Utilities,Streaming,$75.00 
-Shopping,Amazon,$30.00 
-Professional Services,"GitHub, inspections",$20.00 
-Taxes,"Fed, Local","$20,000.00 "
+﻿Category,Subcategory,Monthly Budget
+Mortgage,Mortgage,"$2,200.00"
+Bills & Utilities,Water & Electric,$60.00
+Solar loan,Climate First solar loan,$113.00
+Bills & Utilities,Pool service,$175.00
+Groceries,Groceries,"$1,200.00"
+Food & Drink,"Liquor, Restaurant",$350.00
+Gas,Gas,$50.00
+Automotive,Car loan,$650.00
+Automotive,Car insurance,$60.83
+Bills & Utilities,Pest service,$35.00
+Home,Home maintenance,$500.00
+Elias,Elias support,$833.33
+Bills & Utilities,Phone,$50.00
+Bills & Utilities,Internet,$70.00
+Health & Wellness,Dental,"$2,000.00"
+Health & Wellness,CVS pharmacy,$50.00
+Health & Wellness,Penny vet visits,$41.67
+Bills & Utilities,Penny meds,$38.33
+Bills & Utilities,Dog tracker,$11.75
+Bills & Utilities,Streaming,$75.00
+Shopping,Amazon,$30.00
+Professional Services,"GitHub, inspections",$20.00
+Taxes,"Fed, Local","$1,666.67"

@@ -736,7 +736,7 @@ function parseBankRulesCsv(csvText) {
 }
 
 async function loadBudgetConfig() {
-  const configPath = "../../../OneDrive/Budget BLyon/CSV Budget import v3/Budget.csv";
+  const configPath = "../data/config/Budget.csv";
   try {
     console.log("[BUDGET CONFIG] Loading from:", configPath);
     const text = await readTextFromUrl(configPath);
@@ -745,6 +745,23 @@ async function loadBudgetConfig() {
     state.budgetConfigValidation = validation;
     console.log("[BUDGET CONFIG] Loaded", parsed.length, "rows, valid:", validation.validRows);
     console.log("[BUDGET CONFIG] Sum of all monthly budgets:", validation.sumAllBudgets);
+    
+    // PHASE 4: Populate budgetByCategory from parsed Budget.csv
+    // Group monthly budgets by Category (sum multiple subcategories)
+    const budgetByCategory = {};
+    Object.entries(validation.budgetByCategory).forEach(([category, budget]) => {
+      // Use category name as-is (case-sensitive matching to existing transactions)
+      budgetByCategory[category] = budget;
+    });
+    
+    // Replace hardcoded budget source with Budget.csv data
+    state.budgetByCategory = budgetByCategory;
+    console.log("[PHASE 4] Populated budgetByCategory from Budget.csv:", Object.keys(budgetByCategory).length, "categories");
+    console.log("[PHASE 4] Total monthly budget:", validation.sumAllBudgets);
+    Object.entries(budgetByCategory).slice(0, 5).forEach(([cat, amt]) => {
+      console.log(`  "${cat}": $${amt.toFixed(2)}`);
+    });
+    
     return { success: true, parsed, validation };
   } catch (e) {
     console.warn("[BUDGET CONFIG] Could not load:", e.message);
@@ -756,12 +773,13 @@ async function loadBudgetConfig() {
       sumAllBudgets: 0,
       budgetByCategory: {},
     };
+    state.budgetByCategory = {};
     return { success: false, error: String(e) };
   }
 }
 
 async function loadBankRules() {
-  const rulesPath = "../../../OneDrive/Budget BLyon/CSV Budget import v3/Bank rules.csv";
+  const rulesPath = "../data/config/Bank rules.csv";
   try {
     console.log("[BANK RULES] Loading from:", rulesPath);
     const text = await readTextFromUrl(rulesPath);
@@ -1398,13 +1416,14 @@ function renderKpis(month) {
   if (!row) return;
 
   const income = toNum(row.incomeTotalForMonth || row.incomeObserved);
-  const known = toNum(row.knownExpensesTotal);
-  const net = toNum(row.netObservedMinusKnownExpenses);
+  const budgetKnown = toNum(getKnownForMonthFromModeRows(month, "budget"));
+  const net = Number((income - budgetKnown).toFixed(2));
   const cardFromRow = toNum(row.cardPurchasesObserved);
   const cardFallback = toNum(state.bankCardInfoByMonth[month]);
   const card = cardFromRow > 0 ? cardFromRow : cardFallback;
   const bank = toNum(row.bankExpensesObserved);
-  const baseline = toNum(row.baselineExpenses);
+  // Phase 5: Get Monthly Budget from Budget.csv sum instead of manual baseline
+  const baseline = toNum(state.budgetConfigValidation?.sumAllBudgets || 0);
   state.selectedMonth = month;
   const inferredYear = yearFromMonth(month);
   if (inferredYear) {
@@ -1416,7 +1435,7 @@ function renderKpis(month) {
   }
 
   document.getElementById("kpi-income").textContent = money.format(income);
-  document.getElementById("kpi-expense").textContent = money.format(known);
+  document.getElementById("kpi-expense").textContent = money.format(budgetKnown);
   document.getElementById("kpi-net").textContent = money.format(net);
   document.getElementById("kpi-card").textContent = money.format(card);
   document.getElementById("kpi-bank").textContent = money.format(bank);
@@ -1545,7 +1564,8 @@ function computeAnnualTracking(year) {
   const yearRows = rowsForYear(year);
   if (!yearRows.length) return null;
 
-  const monthlyBudget = toNum(yearRows[yearRows.length - 1].baselineExpenses || yearRows[0].baselineExpenses);
+  // Phase 5: Get monthly budget from Budget.csv sum instead of row.baselineExpenses
+  const monthlyBudget = toNum(state.budgetConfigValidation?.sumAllBudgets || 0);
   const annualBudget = monthlyBudget * 12;
 
   const actualByMonth = {};
@@ -2123,6 +2143,18 @@ function bindUi() {
       if (Object.keys(state.budgetCategories).length === 0) {
         console.log("[INIT] Loading budget categories...");
         await loadBudgetCategories();
+      }
+
+      // Load Budget.csv configuration (needed by renderKpis/computeAnnualTracking)
+      if (!state.budgetConfigValidation || !state.budgetConfigValidation.sumAllBudgets) {
+        console.log("[INIT] Loading Budget.csv configuration...");
+        await loadBudgetConfig();
+      }
+
+      // Load Bank rules.csv (needed by transaction categorization)
+      if (!state.bankRulesRows || state.bankRulesRows.length === 0) {
+        console.log("[INIT] Loading Bank rules...");
+        await loadBankRules();
       }
 
       // Attempt to restore pipeline import from localStorage
