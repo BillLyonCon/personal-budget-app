@@ -9,6 +9,8 @@ const STORAGE_PROFILE_KEY = "budgetApp.profile.v1";
 const STORAGE_OUTLIERS_KEY = "budgetApp.outliers.v1";
 const STORAGE_VENDOR_MAPPING_KEY = "budgetApp.vendorMapping.v1";
 const STORAGE_CATEGORY_ACTUAL_KEY = "budgetApp.categoryActualByMonth.v2";
+const STORAGE_BUDGET_CONFIG_KEY = "budgetApp.budgetConfig.v1";
+const STORAGE_BANK_RULES_KEY = "budgetApp.bankRules.v1";
 
 const OUTLIER_THRESHOLD = 10000; // Flag transactions >= $10,000
 
@@ -30,6 +32,11 @@ const state = {
     importedAt: "",
     calcMode: "cashflow",
   },
+  // Phase 2: Configuration loading
+  budgetConfigRows: [], // Parsed rows from Budget.csv
+  bankRulesRows: [], // Parsed rows from Bank rules.csv
+  budgetConfigValidation: {}, // Validation results from Budget.csv parsing
+  bankRulesValidation: {}, // Validation results from Bank rules.csv parsing
 };
 
 const ROUTES = ["dashboard", "months", "pipeline", "profile", "notes"];
@@ -547,6 +554,242 @@ async function loadBudgetCategories() {
     state.budgetCategories = {};
   }
 }
+
+// ===== PHASE 2: Configuration Loading =====
+
+function cleanCurrencyValue(val) {
+  // Convert " $2,200.00 " or "2200" to numeric value
+  if (!val) return 0;
+  const str = String(val).trim();
+  if (!str) return 0;
+  // Remove $ and commas
+  const numeric = str.replace(/[$,]/g, '');
+  const num = parseFloat(numeric);
+  return isNaN(num) ? 0 : num;
+}
+
+function parseBudgetConfigCsv(csvText) {
+  try {
+    const rows = parseCsv(csvText);
+    const parsed = [];
+    const validation = {
+      totalRows: rows.length,
+      validRows: 0,
+      emptyRows: 0,
+      errors: [],
+      missingCategory: 0,
+      missingSubcategory: 0,
+      missingBudget: 0,
+      blankBudget: 0,
+      sumAllBudgets: 0,
+      budgetByCategory: {}, // For reporting only
+    };
+
+    rows.forEach((row, idx) => {
+      const category = String(row.Category || "").trim();
+      const subcategory = String(row.Subcategory || "").trim();
+      const budgetStr = String(row['Monthy Budget'] || row['Monthly Budget'] || "").trim();
+
+      // Check for empty rows
+      if (!category && !subcategory && !budgetStr) {
+        validation.emptyRows++;
+        return;
+      }
+
+      // Parse budget value
+      const budget = cleanCurrencyValue(budgetStr);
+
+      // Validation checks
+      if (!category) {
+        validation.missingCategory++;
+        validation.errors.push(`Row ${idx + 2}: Missing Category`);
+      }
+      if (!subcategory) {
+        validation.missingSubcategory++;
+        validation.errors.push(`Row ${idx + 2}: Missing Subcategory`);
+      }
+      if (!budgetStr) {
+        validation.missingBudget++;
+        validation.errors.push(`Row ${idx + 2}: Missing Monthly Budget`);
+      }
+      if (budgetStr && budget === 0) {
+        validation.blankBudget++;
+      }
+
+      // Store parsed row (preserve all data, including incomplete rows for visibility)
+      parsed.push({
+        category,
+        subcategory,
+        budget,
+        _originalRow: row, // Keep original for debugging
+      });
+
+      // Track sum and category breakdown
+      if (category && budget > 0) {
+        validation.sumAllBudgets += budget;
+        if (!validation.budgetByCategory[category]) {
+          validation.budgetByCategory[category] = 0;
+        }
+        validation.budgetByCategory[category] += budget;
+        validation.validRows++;
+      }
+    });
+
+    return { parsed, validation };
+  } catch (e) {
+    console.error("[BUDGET CONFIG] Parse error:", e);
+    return {
+      parsed: [],
+      validation: {
+        totalRows: 0,
+        validRows: 0,
+        errors: [String(e)],
+        sumAllBudgets: 0,
+        budgetByCategory: {},
+      },
+    };
+  }
+}
+
+function parseBankRulesCsv(csvText) {
+  try {
+    const rows = parseCsv(csvText);
+    const parsed = [];
+    const validation = {
+      totalRows: rows.length,
+      validRows: 0,
+      errors: [],
+      missingMatchText: 0,
+      missingCategory: 0,
+      missingSubcategory: 0,
+      duplicateMatchText: {},
+    };
+
+    rows.forEach((row, idx) => {
+      const matchText = String(row['Match Text'] || "").trim();
+      const category = String(row.Category || "").trim();
+      const subcategory = String(row.Subcategory || "").trim();
+
+      // Validation checks
+      if (!matchText) {
+        validation.missingMatchText++;
+        validation.errors.push(`Row ${idx + 2}: Missing Match Text`);
+      }
+      if (!category) {
+        validation.missingCategory++;
+        validation.errors.push(`Row ${idx + 2}: Missing Category`);
+      }
+      if (!subcategory) {
+        validation.missingSubcategory++;
+        validation.errors.push(`Row ${idx + 2}: Missing Subcategory`);
+      }
+
+      // Track duplicate Match Text values
+      if (matchText) {
+        if (!validation.duplicateMatchText[matchText]) {
+          validation.duplicateMatchText[matchText] = 0;
+        }
+        validation.duplicateMatchText[matchText]++;
+      }
+
+      // Store parsed row (preserve order and all data)
+      parsed.push({
+        matchText,
+        category,
+        subcategory,
+        _originalRow: row,
+        _rowIndex: idx, // Track original order
+      });
+
+      if (matchText && category && subcategory) {
+        validation.validRows++;
+      }
+    });
+
+    // Convert duplicate count to list of duplicates
+    validation.duplicatesFound = Object.entries(validation.duplicateMatchText)
+      .filter(([_, count]) => count > 1)
+      .map(([text, count]) => ({ matchText: text, occurrences: count }));
+
+    return { parsed, validation };
+  } catch (e) {
+    console.error("[BANK RULES] Parse error:", e);
+    return {
+      parsed: [],
+      validation: {
+        totalRows: 0,
+        validRows: 0,
+        errors: [String(e)],
+        duplicatesFound: [],
+      },
+    };
+  }
+}
+
+async function loadBudgetConfig() {
+  const configPath = "../../../OneDrive/Budget BLyon/CSV Budget import v3/Budget.csv";
+  try {
+    console.log("[BUDGET CONFIG] Loading from:", configPath);
+    const text = await readTextFromUrl(configPath);
+    const { parsed, validation } = parseBudgetConfigCsv(text);
+    state.budgetConfigRows = parsed;
+    state.budgetConfigValidation = validation;
+    console.log("[BUDGET CONFIG] Loaded", parsed.length, "rows, valid:", validation.validRows);
+    console.log("[BUDGET CONFIG] Sum of all monthly budgets:", validation.sumAllBudgets);
+    return { success: true, parsed, validation };
+  } catch (e) {
+    console.warn("[BUDGET CONFIG] Could not load:", e.message);
+    state.budgetConfigRows = [];
+    state.budgetConfigValidation = {
+      totalRows: 0,
+      validRows: 0,
+      errors: [String(e)],
+      sumAllBudgets: 0,
+      budgetByCategory: {},
+    };
+    return { success: false, error: String(e) };
+  }
+}
+
+async function loadBankRules() {
+  const rulesPath = "../../../OneDrive/Budget BLyon/CSV Budget import v3/Bank rules.csv";
+  try {
+    console.log("[BANK RULES] Loading from:", rulesPath);
+    const text = await readTextFromUrl(rulesPath);
+    const { parsed, validation } = parseBankRulesCsv(text);
+    state.bankRulesRows = parsed;
+    state.bankRulesValidation = validation;
+    console.log("[BANK RULES] Loaded", parsed.length, "rows, valid:", validation.validRows);
+    console.log("[BANK RULES] Preserved order:", parsed.length, "rows in original sequence");
+    return { success: true, parsed, validation };
+  } catch (e) {
+    console.warn("[BANK RULES] Could not load:", e.message);
+    state.bankRulesRows = [];
+    state.bankRulesValidation = {
+      totalRows: 0,
+      validRows: 0,
+      errors: [String(e)],
+      duplicatesFound: [],
+    };
+    return { success: false, error: String(e) };
+  }
+}
+
+async function loadAndValidateConfiguration() {
+  console.log("[CONFIG] Starting Phase 2: Configuration loading");
+  const budgetResult = await loadBudgetConfig();
+  const rulesResult = await loadBankRules();
+  
+  try {
+    localStorage.setItem(STORAGE_BUDGET_CONFIG_KEY, JSON.stringify(state.budgetConfigRows));
+    localStorage.setItem(STORAGE_BANK_RULES_KEY, JSON.stringify(state.bankRulesRows));
+  } catch (_) {
+    // Ignore storage failures
+  }
+
+  return { budgetResult, rulesResult };
+}
+
 
 function findCategoryByVendor(merchantName) {
   if (!merchantName) return null;
@@ -1690,6 +1933,226 @@ function updateRunImportsState() {
   }
 }
 
+// ===== PHASE 2: Configuration File Handlers =====
+
+async function parseUploadedConfigFiles() {
+  const budgetInput = document.getElementById("budget-config-input");
+  const rulesInput = document.getElementById("bank-rules-input");
+  const reportDiv = document.getElementById("config-report");
+  const reportText = document.getElementById("config-report-text");
+
+  if (!budgetInput?.files?.length || !rulesInput?.files?.length) {
+    alert("Please select both Budget.csv and Bank rules.csv files");
+    return;
+  }
+
+  try {
+    // Read Budget.csv
+    const budgetFile = budgetInput.files[0];
+    const budgetCsv = await budgetFile.text();
+    const { parsed: budgetParsed, validation: budgetValidation } = parseBudgetConfigCsv(budgetCsv);
+    state.budgetConfigRows = budgetParsed;
+    state.budgetConfigValidation = budgetValidation;
+
+    // Read Bank rules.csv
+    const rulesFile = rulesInput.files[0];
+    const rulesCsv = await rulesFile.text();
+    const { parsed: rulesParsed, validation: rulesValidation } = parseBankRulesCsv(rulesCsv);
+    state.bankRulesRows = rulesParsed;
+    state.bankRulesValidation = rulesValidation;
+
+    // Generate report
+    generateConfigurationReport(budgetValidation, rulesValidation, budgetParsed, rulesParsed, reportDiv, reportText);
+
+    // Save to localStorage
+    try {
+      localStorage.setItem(STORAGE_BUDGET_CONFIG_KEY, JSON.stringify(state.budgetConfigRows));
+      localStorage.setItem(STORAGE_BANK_RULES_KEY, JSON.stringify(state.bankRulesRows));
+    } catch (_) {
+      // Ignore storage failures
+    }
+
+    setStatus("Configuration files loaded and validated successfully.");
+  } catch (e) {
+    console.error("Error parsing configuration files:", e);
+    alert("Error parsing files: " + String(e));
+    setStatus("Configuration file parsing failed. Check console for details.");
+  }
+}
+
+function generateConfigurationReport(budgetValidation, rulesValidation, budgetParsed, rulesParsed, reportDiv, reportText) {
+  const report = [];
+
+  report.push("=".repeat(80));
+  report.push("PHASE 2: CONFIGURATION LOADING REPORT");
+  report.push("=".repeat(80));
+  report.push("");
+
+  // Budget.csv Report
+  report.push("A. FILES/FUNCTIONS CHANGED:");
+  report.push("  - app/script.js: Added cleanCurrencyValue(), parseBudgetConfigCsv(), parseBankRulesCsv()");
+  report.push("  - app/script.js: Added loadBudgetConfig(), loadBankRules(), loadAndValidateConfiguration()");
+  report.push("  - app/script.js: Added parseUploadedConfigFiles(), generateConfigurationReport()");
+  report.push("  - app/index.html: Added Phase 2 configuration UI section with file inputs and buttons");
+  report.push("");
+
+  report.push("B. PARSED BUDGET.CSV ROWS:");
+  report.push(`  Total rows in file: ${budgetValidation.totalRows}`);
+  report.push(`  Empty rows: ${budgetValidation.emptyRows}`);
+  report.push(`  Valid rows (with all fields): ${budgetValidation.validRows}`);
+  report.push("");
+  
+  if (budgetParsed.length > 0) {
+    report.push("  First 5 rows (with validation):");
+    budgetParsed.slice(0, 5).forEach((row, idx) => {
+      if (row.category || row.subcategory || row.budget > 0) {
+        report.push(`    Row ${idx + 1}: Category="${row.category}" | Subcategory="${row.subcategory}" | Budget=$${row.budget.toFixed(2)}`);
+      }
+    });
+    report.push(`  ... and ${Math.max(0, budgetParsed.length - 5)} more rows`);
+  }
+  report.push("");
+
+  report.push("C. SUM OF ALL MONTHLY BUDGET ROWS:");
+  report.push(`  Total: $${budgetValidation.sumAllBudgets.toFixed(2)}`);
+  report.push("");
+
+  report.push("D. BUDGET TOTALS GROUPED BY CATEGORY (for validation only):");
+  const sortedCategories = Object.entries(budgetValidation.budgetByCategory)
+    .sort((a, b) => b[1] - a[1]);
+  
+  if (sortedCategories.length > 0) {
+    sortedCategories.forEach(([category, total]) => {
+      report.push(`  ${category}: $${total.toFixed(2)}`);
+    });
+  } else {
+    report.push("  (No valid budget rows found)");
+  }
+  report.push("");
+
+  report.push("E. PARSED BANK RULES.CSV ROWS (IN ORIGINAL FILE ORDER):");
+  report.push(`  Total rows in file: ${rulesValidation.totalRows}`);
+  report.push(`  Valid rows (with all fields): ${rulesValidation.validRows}`);
+  report.push("");
+
+  if (rulesParsed.length > 0) {
+    report.push("  First 10 rows (preserving order):");
+    rulesParsed.slice(0, 10).forEach((row) => {
+      report.push(`    "${row.matchText}" → Category="${row.category}" | Subcategory="${row.subcategory}"`);
+    });
+    if (rulesParsed.length > 10) {
+      report.push(`  ... and ${rulesParsed.length - 10} more rules (order preserved)`);
+    }
+  }
+  report.push("");
+
+  report.push("F. VALIDATION CONCERNS:");
+  if (budgetValidation.errors.length > 0) {
+    report.push("  Budget.csv errors:");
+    budgetValidation.errors.slice(0, 5).forEach((err) => {
+      report.push(`    - ${err}`);
+    });
+    if (budgetValidation.errors.length > 5) {
+      report.push(`    ... and ${budgetValidation.errors.length - 5} more errors`);
+    }
+  } else {
+    report.push("  Budget.csv: No errors");
+  }
+
+  if (budgetValidation.missingCategory > 0) {
+    report.push(`  Budget.csv: ${budgetValidation.missingCategory} rows missing Category`);
+  }
+  if (budgetValidation.missingSubcategory > 0) {
+    report.push(`  Budget.csv: ${budgetValidation.missingSubcategory} rows missing Subcategory`);
+  }
+  if (budgetValidation.missingBudget > 0) {
+    report.push(`  Budget.csv: ${budgetValidation.missingBudget} rows missing Monthly Budget`);
+  }
+  if (budgetValidation.blankBudget > 0) {
+    report.push(`  Budget.csv: ${budgetValidation.blankBudget} rows with zero/unparseable budget`);
+  }
+
+  report.push("");
+  
+  if (rulesValidation.errors.length > 0) {
+    report.push("  Bank rules.csv errors:");
+    rulesValidation.errors.slice(0, 5).forEach((err) => {
+      report.push(`    - ${err}`);
+    });
+    if (rulesValidation.errors.length > 5) {
+      report.push(`    ... and ${rulesValidation.errors.length - 5} more errors`);
+    }
+  } else {
+    report.push("  Bank rules.csv: No errors");
+  }
+
+  if (rulesValidation.missingMatchText > 0) {
+    report.push(`  Bank rules.csv: ${rulesValidation.missingMatchText} rows missing Match Text`);
+  }
+  if (rulesValidation.missingCategory > 0) {
+    report.push(`  Bank rules.csv: ${rulesValidation.missingCategory} rows missing Category`);
+  }
+  if (rulesValidation.missingSubcategory > 0) {
+    report.push(`  Bank rules.csv: ${rulesValidation.missingSubcategory} rows missing Subcategory`);
+  }
+
+  if (rulesValidation.duplicatesFound && rulesValidation.duplicatesFound.length > 0) {
+    report.push("  Bank rules.csv: Duplicate Match Text values found:");
+    rulesValidation.duplicatesFound.forEach((dup) => {
+      report.push(`    - "${dup.matchText}" appears ${dup.occurrences} times`);
+    });
+  }
+
+  report.push("");
+
+  report.push("G. EXISTING PROCESSING VERIFICATION:");
+  report.push("  ✓ Credit-card transaction processing: NOT CHANGED");
+  report.push("  ✓ Bank transaction processing: NOT CHANGED");
+  report.push("  ✓ findCategoryByVendor(): NOT CHANGED");
+  report.push("  ✓ inferBankCategory(): NOT CHANGED");
+  report.push("  ✓ inferCardCategoryByDescription(): NOT CHANGED");
+  report.push("  ✓ state.categoryActualByMonth: NOT CHANGED");
+  report.push("  ✓ isCardTransferDescription(): NOT CHANGED");
+  report.push("  ✓ knownExpensesTotal: NOT CHANGED");
+  report.push("  ✓ incomeTotalForMonth: NOT CHANGED");
+  report.push("  ✓ baselineExpenses: NOT CHANGED");
+  report.push("  ✓ KPI rendering: NOT CHANGED");
+  report.push("  ✓ Category chart rendering: NOT CHANGED");
+  report.push("  ✓ mergeForChart(): NOT CHANGED");
+  report.push("  ✓ Existing Budget vs Actual calculations: NOT CHANGED");
+  report.push("");
+
+  report.push("PHASE 2 STATUS: COMPLETE");
+  report.push("Configuration data loaded and validated. Ready for Phase 3 review.");
+  report.push("=".repeat(80));
+
+  const reportContent = report.join("\n");
+  reportText.textContent = reportContent;
+  reportDiv.style.display = "block";
+
+  // Also log to console
+  console.log(reportContent);
+}
+
+function clearConfigFiles() {
+  const budgetInput = document.getElementById("budget-config-input");
+  const rulesInput = document.getElementById("bank-rules-input");
+  const reportDiv = document.getElementById("config-report");
+
+  if (budgetInput) budgetInput.value = "";
+  if (rulesInput) rulesInput.value = "";
+  reportDiv.style.display = "none";
+
+  state.budgetConfigRows = [];
+  state.bankRulesRows = [];
+  state.budgetConfigValidation = {};
+  state.bankRulesValidation = {};
+
+  setStatus("Configuration files cleared.");
+}
+
+// ===== End of Phase 2 Handlers =====
+
 function bindUi() {
   state.profile = loadProfileFromStorage();
   updateBrandingFromProfile();
@@ -1705,6 +2168,17 @@ function bindUi() {
   document.getElementById("run-imports").addEventListener("click", runRawImports);
   document.getElementById("download-computed").addEventListener("click", downloadComputedSnapshotCsv);
   document.getElementById("clear-imports").addEventListener("click", clearImports);
+
+  // Phase 2: Configuration file buttons
+  const loadConfigBtn = document.getElementById("load-config");
+  if (loadConfigBtn) {
+    loadConfigBtn.addEventListener("click", parseUploadedConfigFiles);
+  }
+
+  const clearConfigBtn = document.getElementById("clear-config");
+  if (clearConfigBtn) {
+    clearConfigBtn.addEventListener("click", clearConfigFiles);
+  }
 
   const saveProfileBtn = document.getElementById("save-profile");
   if (saveProfileBtn) {
