@@ -37,6 +37,15 @@ const state = {
   bankRulesRows: [], // Parsed rows from Bank rules.csv
   budgetConfigValidation: {}, // Validation results from Budget.csv parsing
   bankRulesValidation: {}, // Validation results from Bank rules.csv parsing
+  // Phase 3: Categorization statistics
+  phase3Stats: {
+    bankTransactionsExamined: 0,
+    bankTransactionsMatched: 0,
+    bankTransactionsUnmatched: [],
+    cardTransactionsExamined: 0,
+    cardTransactionsWithCategory: 0,
+    cardTransactionsBlankCategory: [],
+  },
 };
 
 const ROUTES = ["dashboard", "months", "pipeline", "profile", "notes"];
@@ -817,6 +826,31 @@ function findCategoryByVendor(merchantName) {
   return null;
 }
 
+// ===== PHASE 3: Bank Rules Matching =====
+function matchBankRuleByDescription(description) {
+  if (!description) return null;
+  const desc = String(description).trim().toLowerCase();
+  if (!desc || !state.bankRulesRows || state.bankRulesRows.length === 0) return null;
+
+  // Evaluate rules in original CSV order (first match wins)
+  for (const rule of state.bankRulesRows) {
+    const matchText = String(rule.matchText || "").trim().toLowerCase();
+    if (!matchText) continue;
+
+    // Case-insensitive substring/contains matching
+    if (desc.includes(matchText)) {
+      console.log(`[BANK RULE MATCH] "${description}" matched rule "${rule.matchText}" → Category: "${rule.category}"`);
+      return {
+        category: rule.category,
+        subcategory: rule.subcategory,
+      };
+    }
+  }
+
+  return null;
+}
+// ===== End Phase 3 Bank Rules Matching =====
+
 async function loadBankCardInfoByMonth() {
   try {
     const text = await readTextFromUrl(BANK_EXPENSES_DETAIL_PATH);
@@ -920,6 +954,17 @@ function buildSnapshotFromRawUploads(bankRows, cardRows1, cardRows2, baseline, c
   const categoryByMonth = {}; // Track category-level actuals
   const mode = calcMode === "budget" ? "budget" : "cashflow";
   state.outliersByMonth = {}; // Reset outliers for this run
+  
+  // Phase 3: Initialize statistics tracking
+  state.phase3Stats = {
+    bankTransactionsExamined: 0,
+    bankTransactionsMatched: 0,
+    bankTransactionsUnmatched: [],
+    cardTransactionsExamined: 0,
+    cardTransactionsWithCategory: 0,
+    cardTransactionsBlankCategory: [],
+  };
+  
   console.log(`[BUILD] Starting snapshot with ${bankRows.length} bank rows, mode: ${mode}`);
 
   bankRows.forEach((r) => {
@@ -956,10 +1001,23 @@ function buildSnapshotFromRawUploads(bankRows, cardRows1, cardRows2, baseline, c
       return;
     }
 
-    // Track category-level actuals by vendor matching
-    const vendorCategory = findCategoryByVendor(desc);
-    const category = vendorCategory || inferBankCategory(desc) || "uncategorized";
-    addCategory(categoryByMonth, month, category, Math.abs(amount));
+    // ===== PHASE 3: Bank Transaction Categorization via Bank rules.csv =====
+    state.phase3Stats.bankTransactionsExamined++;
+    const ruleMatch = matchBankRuleByDescription(desc);
+    
+    if (ruleMatch) {
+      state.phase3Stats.bankTransactionsMatched++;
+      addCategory(categoryByMonth, month, ruleMatch.category, Math.abs(amount));
+    } else {
+      // No rule matched - transaction is unmatched, do not add to categoryActualByMonth
+      state.phase3Stats.bankTransactionsUnmatched.push({
+        month,
+        description: desc,
+        amount: Math.abs(amount),
+      });
+      console.log(`[BANK UNMATCHED] No rule matched: "${desc}" ($${Math.abs(amount).toFixed(2)})`);
+    }
+    // ===== End Phase 3 Bank Categorization =====
 
     bucket.bankExpensesObserved += Math.abs(amount);
   });
@@ -983,10 +1041,24 @@ function buildSnapshotFromRawUploads(bankRows, cardRows1, cardRows2, baseline, c
         return; // Skip adding outlier to bucket
       }
 
-      // Track category-level actuals by vendor matching
-      const vendorCategory = findCategoryByVendor(desc);
-      const category = vendorCategory || inferCardCategoryByDescription(desc) || "uncategorized";
-      addCategory(categoryByMonth, month, category, Math.abs(amount));
+      // ===== PHASE 3: Credit Card Categorization via Chase Category Column =====
+      state.phase3Stats.cardTransactionsExamined++;
+      const chaseCategory = String(r.Category || "").trim();
+      
+      if (chaseCategory) {
+        state.phase3Stats.cardTransactionsWithCategory++;
+        // Use Chase Category directly, do NOT allow any overrides
+        addCategory(categoryByMonth, month, chaseCategory, Math.abs(amount));
+      } else {
+        // Chase Category is blank/missing - leave uncategorized (no fallback in Phase 3)
+        state.phase3Stats.cardTransactionsBlankCategory.push({
+          month,
+          description: desc,
+          amount: Math.abs(amount),
+        });
+        console.log(`[CARD BLANK] Chase Category missing for: "${desc}" ($${Math.abs(amount).toFixed(2)})`);
+      }
+      // ===== End Phase 3 Credit Card Categorization =====
 
       const bucket = ensureMonthBucket(byMonth, month);
       bucket.cardPurchasesObserved += Math.abs(amount);
@@ -1814,6 +1886,12 @@ async function runRawImports() {
     if (Object.keys(state.budgetCategories).length === 0) {
       console.log("[IMPORT] Budget categories empty, loading now...");
       await loadBudgetCategories();
+    }
+
+    // Phase 3: Ensure Bank rules are loaded before processing transactions
+    if (!state.bankRulesRows || state.bankRulesRows.length === 0) {
+      console.log("[IMPORT] Bank rules empty, loading now...");
+      await loadBankRules();
     }
     
     const required = ["bank-csv-input", "card1-csv-input", "card2-csv-input"];
