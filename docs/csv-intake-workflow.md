@@ -1,72 +1,62 @@
-# CSV Intake Workflow
+# CSV Import Workflow - Bank and Credit Card Statements
 
-## Vendor Mapping CSV (Budget Category Configuration)
+## Budget Configuration
 
-**Purpose:** Configure vendor-to-category mappings for automatic transaction categorization during import.
+### Source of Truth
+The application's budget configuration comes from an externally-maintained Excel workbook:
+- **Location:** `C:\Users\billlocal\OneDrive\Budget BLyon\CSV Budget import v3\blyon budget v3 reformatted MASTER .xlsx`
+- **Purpose:** Human-editable master with detailed budget planning fields
+- **Contents:** Budget categories, monthly amounts, daily breakdowns, quarterly amounts, annual totals, cost type (FIXED/ESTIMATED), vendor notes
 
-**Source file:** `data/blyon budget.csv` (user-editable)  
-**App reads from:** `data/processed/vendor-category-mapping.csv` (generated from source)
+### Budget Import to Application
+When the budget needs to be updated:
+1. Edit the external Excel master workbook
+2. Export the Budget sheet as a simplified CSV with three columns: Category, Subcategory, Monthly Budget
+3. Save the exported CSV as `data/config/Budget.csv`
+4. Application automatically loads the updated budget on startup
 
-**Setup:**
-1. Edit `data/blyon budget.csv` directly to add/modify vendor patterns
-2. Refresh app — it automatically detects changes and loads new mappings
-   - Or manually check: When `blyon budget.csv` is modified, run sync to copy to `vendor-category-mapping.csv`
-3. On app startup, vendor mappings load from `vendor-category-mapping.csv`
+### Application Budget Configuration
+**File:** `data/config/Budget.csv`
+- **Columns:** Category, Subcategory, Monthly Budget
+- **Current:** 23 categories with $10,280.58 monthly budget total
+- **Loaded:** On application startup
+- **Usage:**
+  - Monthly Budget KPI displays total
+  - Annual Budget = Monthly Budget × 12
+  - Category-level budget amounts for variance comparison
 
-**CSV columns from blyon budget.csv:**
-- `Budget Category` — Category name (e.g., "Mortgage", "Groceries", "Utilities")
-- `Monthly` — Monthly budget amount for this category
-- `Daily` — Optional daily breakdown (for variable expenses)
-- `QTR` — Optional quarterly budget amount
-- `Annual` — Annual budget total (for reference/verification)
-- Column 6 — Budget type: **FIXED** (recurring/stable) or **ESTIMATED** (variable/average)
-- `VENDOR (comma delimited) - from Bank statement CSV Description column` — Comma-delimited merchant patterns matched against **both bank and credit card transaction descriptions** for automatic categorization
-- `CHASE CREDIT CARD CATEGORY - from card statements- CATEGORY column` — Reference only; shows what Chase calls this category (not used in matching)
+---
 
-**How vendor matching works during transaction import:**
-1. When you upload bank/credit card CSV files, each transaction's merchant description is checked against the VENDOR column patterns
-2. Matching is case-insensitive with two-tier approach:
-   - **Exact match** (after lowercase/space normalization): e.g., "netflix.com" matches "NETFLIX.COM"
-   - **Partial match fallback**: e.g., "publix" matches "PUBLIX SUPER MARKET" 
-3. **Vendor matching applies to both bank and card transactions** — uses same logic for both
-4. If vendor matches → transaction categorized automatically
-5. If no match → falls back to built-in inference heuristics
-6. Category actuals tracked separately for budget variance reporting
+## Bank Transaction Categorization
 
-**Example rows:**
-```
-Budget Category,Monthly,Daily,QTR,Annual,,VENDOR (comma delimited) - from Bank statement CSV Description column,CHASE CREDIT CARD CATEGORY - from card statements- CATEGORY column
-Mortgage,"$2,200.00 ",,,"$26,400.00 ", FIXED ,JPMORGAN CHASE   CHASE ACH,
-Groceries,"$1,500.00 ",$50.00 ,,"$18,000.00 ", ESTIMATED ,"NORTHWEST SEAFOOD,PUBLIX,Fresh market, Uppercrust,",Groceries
-Streaming,$75.00 ,,,$900.00 , ESTIMATED ,"Netflix.com,HBO,QOBUZ",Bills & Utilities
-```
+### Configuration
+**File:** `data/config/Bank rules.csv`
+- **Contents:** 26 categorization rules
+- **Behavior:** First matching rule wins
+- **Rule order:** Preserved from CSV (order matters)
+- **Matching:** Case-insensitive substring matching on transaction description
 
-**Update workflow:**
-1. Edit vendor patterns in `data/blyon budget.csv`
-2. Refresh browser — app loads new mappings on startup
-3. Re-import bank/credit card CSV files to recategorize with new vendor rules
-
-**Budget Categories Import**
-- Budget amounts loaded from `data/processed/budget-category-import.csv`
-- Must have entries for each month you want to track (`month` field in YYYY-MM format)
-- Category names must match vendor mapping names for budget comparison to work
-- If a category appears in transactions but not in budget file, it shows $0 budget
+### How It Works
+1. When you import bank/credit card statements, each transaction's merchant description is checked against the Bank rules
+2. If a rule matches → Transaction categorized with that rule's category
+3. If no match → Falls back to built-in categorization heuristics
+4. Bank rules apply to both bank transfers (ACH, billpay, Zelle) and credit card purchases
 
 ---
 
 ## Bank & Credit Card CSV Imports
 
-Use CSV as the primary source when your bank supports direct download.
+Use CSV as the primary import format for your bank and credit card statements.
 
-## Why CSV
+### Why CSV
+- Structured data format ensures accurate parsing
+- Direct import to web UI without extra processing steps
+- Better month-by-month reconciliation
+- Works with any bank that supports CSV export
 
-- Structured data format ensures accurate parsing.
-- Direct import to web UI without extra processing steps.
-- Better month-by-month reconciliation.
+### Chase.com Export Procedure
 
-## Chase.com Export Procedure
-
-### Exporting Account Activity CSV
+#### Exporting Account Activity CSV
 
 1. **Access your Chase account**
    - Go to https://secure.chase.com/web/auth/dashboard
@@ -90,50 +80,14 @@ Use CSV as the primary source when your bank supports direct download.
      - **For credit cards:** "2. Credit card CSV (Amazon card)" or "3. Credit card CSV (day-to-day card)"
    - Click "Show Results in UI" to process the upload
 
-### Quick Link
+#### Quick Link
 
-- Chase direct download page:
-  - https://secure.chase.com/web/auth/dashboard#/dashboard/accountDetails/downloadAccountTransactions/index;params=CARD,BAC,810957803
+- Chase direct download page: https://secure.chase.com/web/auth/dashboard#/dashboard/accountDetails/downloadAccountTransactions/index;params=CARD,BAC,810957803
 
-## Processing Your CSV
+### Processing Your CSV
 
-After uploading your files in the web UI, the app automatically processes them and categorizes transactions using vendor mappings. No additional steps required.
-
-## Advanced: Manual batch processing with scripts
-
-For developers or batch processing workflows, CSVs can also be parsed via command line:
-
-**Where to place files for scripts:**
-
-- Bank account activity CSVs (checking/savings):
-  - data/raw/expenses/bank-statements
-- Credit card CSVs:
-  - data/raw/expenses/credit-cards
-
-### Parse bank transactions CSV
-
-Run:
-
-powershell
-./scripts/parse-bank-transactions-csv.ps1 -InputCsv "data/raw/expenses/bank-statements/<your-file>.csv" -TreatAllCreditsAsIncome
-
-Outputs:
-- data/processed/expenses/bank-statements/bank-expenses-from-csv.csv
-- data/processed/expenses/bank-statements/bank-transactions-csv-rejected.csv
-
-### Parse credit card transactions CSV
-
-Run:
-
-powershell
-./scripts/parse-credit-card-activity-csv.ps1 -InputCsv "data/raw/expenses/credit-cards/<your-file>.csv"
-
-Outputs:
-- data/processed/expenses/credit-cards/credit-card-transactions-from-csv.csv
-- data/processed/expenses/credit-cards/credit-card-transactions-rejected.csv
-
-## Notes
-
-- All transaction data flows through the import pipeline in the app
-- Avoid ingesting the same transactions from multiple sources for the same date range to prevent double counting
-- Vendor matching is case-insensitive with two-tier approach: exact match first, then substring containment
+After uploading your files in the web UI:
+1. The app categorizes transactions using Bank rules (stored in data/config/Bank rules.csv)
+2. Categorized transactions are grouped by category and month
+3. Monthly actuals are compared against budget amounts from data/config/Budget.csv
+4. Results display in the dashboard with budget variance analysis

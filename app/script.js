@@ -484,7 +484,7 @@ async function loadVendorMapping() {
 
 async function loadBudgetCategories() {
   try {
-    // Try to load budget v2 file
+    // Load budget categories from processed budget-categories.csv
     const budgetPath = VENDOR_MAPPING_PATH.replace('vendor-category-mapping.csv', 'budget-categories.csv');
     const text = await readTextFromUrl(budgetPath);
     const rows = parseCsv(text);

@@ -8,7 +8,7 @@ This project is a fresh start, inspired by the useful parts of the corporate bud
 
 Track monthly financial health in one place:
 - Expense tracking from bank and credit card CSV statements
-- Auto-categorization using vendor mappings
+- Auto-categorization using Bank rules
 - Budget vs actual variance
 - Savings progress for rainy day fund and retirement
 
@@ -16,7 +16,7 @@ Track monthly financial health in one place:
 
 Included:
 - Expense import from bank and credit card CSV files
-- Auto-categorization using vendor mappings
+- Auto-categorization using Bank rules (26 rules in data/config/Bank rules.csv)
 - Category mapping and monthly rollups
 - Monthly variance dashboard (income, expense, net)
 - Savings goal tracking (rainy day and retirement)
@@ -44,7 +44,7 @@ Not included in v1:
 ## Workflow Summary
 
 1. Import bank and credit card statement CSVs through Import Pipeline.
-2. Transactions auto-categorized using Bank rules and vendor mappings.
+2. Transactions auto-categorized using Bank rules (data/config/Bank rules.csv).
 3. Review dashboard with Monthly Budget, Monthly Actual (expenses in Budget-mode), and Net Result.
 4. Adjust categories as needed.
 5. Track savings goals and annual budget progress.
@@ -62,11 +62,7 @@ Not included in v1:
 - 26 rules that auto-categorize bank transactions
 - First matching rule wins; CSV rule order is preserved
 - Loaded on app startup for expense classification
-
-**Vendor Category Mapping:** `data/processed/vendor-category-mapping.csv`
-- Maps bank statement vendors to budget categories
-- Used to categorize bank transactions (ACH, billpay, Zelle)
-- Links vendors from bank CSV Description column to category names
+- Applies to both bank transfers (ACH, billpay, Zelle) and credit card purchases
 
 **Transaction Data:** Import via Import Pipeline tab
 - Bank statements: CSV files in `data/raw/`
