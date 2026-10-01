@@ -40,16 +40,19 @@ Goals:
 - Define monthly workflow and status metrics
 
 Core entities:
-- IncomeEntry
-- ObligationEntry
+- IncomeEntry (planned, not yet implemented)
+- ObligationEntry (planned, not yet implemented)
 - ExpenseEntry
-- BudgetCategory
-- SavingsGoal
+- BudgetCategory (input: Budget.csv with Category, Subcategory, Monthly Budget columns)
+- SavingsGoal (planned, not yet implemented)
 - ImportBatch
+- BankRule (26 CSV-based rules for auto-categorization)
 
 Exit criteria:
-- Data model documented and reviewed
-- Sample records verified against data contracts
+- Data model documented and reviewed ✅
+- Budget.csv finalized with 23 categories, $10,280.58 monthly total ✅
+- Bank rules.csv finalized with 26 rules, first-match-wins behavior ✅
+- Sample records verified against data contracts ✅
 
 ## Phase 3 - Import and Calculation Engine
 
@@ -60,15 +63,20 @@ Goals:
 
 Calculation outputs:
 - Total income
-- Total obligations
-- Total variable expenses
-- Net monthly result
+- Monthly Actual (Budget-mode knownExpensesTotal for apples-to-apples comparison)
+- Net Result (Income Total - Budget-mode knownExpensesTotal)
+- Monthly Budget (from Budget.csv)
+- Annual Budget (Monthly Budget x 12)
 - Category-level variance
 - Savings progress percent
 
 Exit criteria:
-- Import matrix passes for clean and messy inputs
-- Formula outputs validated with fixed test set
+- Import matrix passes for clean and messy inputs ✅
+- Formula outputs validated with fixed test set ✅
+- Bank categorization uses Bank rules.csv with first-match-wins ✅
+- Monthly Actual KPI consistent with Budget-mode expenses ✅
+- Net Result aligned with Budget-mode Monthly Actual ✅
+- Regression verification: PASS ✅
 
 ## Phase 4 - API and UI
 
@@ -78,15 +86,20 @@ Goals:
 - Support correction loop for mapped categories
 
 Views:
-- Dashboard
-- Transactions
-- Income and obligations
-- Goals
-- Settings/import
+- Dashboard ✅ (Monthly Budget, Monthly Actual, Net Result KPIs; category chart; monthly trend)
+- Transactions (planned)
+- Income and obligations (planned)
+- Goals (planned)
+- Settings/import ✅ (CSV import pipeline)
+
+Local server:
+- serve.js created to run app locally on port 8000 ✅
+- Fixed URL-decoding issue for Bank%20rules.csv HTTP requests ✅
+- Budget.csv and Bank rules.csv load successfully on app startup ✅
 
 Exit criteria:
-- Core workflows complete on phone and desktop viewports
-- Data roundtrip tested end-to-end
+- Core workflows complete on phone and desktop viewports (in progress)
+- Data roundtrip tested end-to-end ✅
 
 ## Phase 5 - Validation and Release Prep
 

@@ -42,7 +42,23 @@ Fields:
 
 ## BudgetCategory
 
+**Input Contract (from `data/config/Budget.csv`):**
+
 Fields:
+- Category: string
+- Subcategory: string
+- Monthly Budget: number (currency, >= 0)
+
+Notes:
+- Static monthly configuration, loaded on app startup
+- 23 categories with monthly budget totals
+- Current verified total: $10,280.58 monthly
+- Annual Budget = Monthly Budget x 12
+- Used for Monthly Budget KPI and Budget vs Actual variance calculation
+
+**Internal Application Type (for reference):**
+
+If storing computed category budgets:
 - id: string
 - month: string (YYYY-MM)
 - name: string
@@ -56,6 +72,21 @@ Fields:
 - targetAmount: number (> 0)
 - currentAmount: number (>= 0)
 - targetDate: string optional (YYYY-MM)
+
+## BankRule
+
+**Input Contract (from `data/config/Bank rules.csv`):**
+
+Fields (exact columns depend on CSV):
+- Pattern-matching criteria (e.g., Description substring, amount range)
+- Target category
+
+Notes:
+- 26 rules, loaded on app startup
+- CSV rule order is preserved
+- First matching rule wins for transaction categorization
+- Used to auto-categorize bank transactions
+- Case-insensitive substring matching on description field
 
 ## ImportBatch
 
@@ -93,13 +124,17 @@ Validation behavior:
 Fields:
 - month: string (YYYY-MM)
 - totalIncome: number
-- totalObligations: number
-- totalVariableExpenses: number
+- totalBudget: number (from Budget.csv monthly total)
+- monthlyActual: number (Budget-mode knownExpensesTotal: bank expenses + credit card purchases)
 - netResult: number
 - savingsContribution: number
 
 Formula:
-- netResult = totalIncome - (totalObligations + totalVariableExpenses)
+- totalBudget = Budget.csv monthly total (e.g., $10,280.58)
+- monthlyActual = Budget-mode knownExpensesTotal (bank-observed + card-observed expenses)
+- netResult = totalIncome - monthlyActual
+- annualBudget = totalBudget x 12
+- variance = totalBudget - monthlyActual
 
 ## CategoryVariance
 
