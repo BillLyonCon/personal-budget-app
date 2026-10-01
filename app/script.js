@@ -204,7 +204,7 @@ function renderModeDifferenceCallout(month) {
   const activeMode = (modeInput?.value || state.meta.calcMode || "cashflow") === "budget" ? "budget" : "cashflow";
   const modeLine = activeMode === "budget"
     ? "Showing Budget mode: Known Expenses = card purchases + bank expenses excluding card-payment transfers."
-    : "Showing Cashflow mode: Known Expenses = all bank debits (including card payments).";
+    : "Showing Cashflow mode: Known Expenses = all bank debits excluding card-payment transfers.";
 
   const cashflowKnown = getKnownForMonthFromModeRows(month, "cashflow");
   const budgetKnown = getKnownForMonthFromModeRows(month, "budget");
@@ -1261,7 +1261,7 @@ function updatePipelineKnownExpensesDefinition(modeOverride) {
   if (summary) {
     summary.textContent = normalizedMode === "budget"
       ? "Known Expenses currently follows budget mode: card purchases + bank expenses excluding card-payment transfers."
-      : "Known Expenses currently follows cashflow mode: all bank debits (including card payments).";
+      : "Known Expenses currently follows cashflow mode: all bank debits excluding card-payment transfers.";
   }
 }
 
