@@ -52,10 +52,7 @@ const ROUTES = ["dashboard", "months", "pipeline", "profile", "notes"];
 
 const DEFAULT_PROFILE = {
   name: "",
-  bankResource: "",
-  baselineBudget: 8812.24,
   preferredMode: "cashflow",
-  monthlySavingsGoal: 0,
 };
 
 const money = new Intl.NumberFormat("en-US", {
@@ -937,7 +934,6 @@ function ensureMonthBucket(map, month) {
       incomeObserved: 0,
       incomeBackfill: 0,
       incomeTotalForMonth: 0,
-      baselineExpenses: 0,
       cardPurchasesObserved: 0,
       bankExpensesObserved: 0,
       knownExpensesTotal: 0,
@@ -967,7 +963,7 @@ function flagOutliersInTransaction(amount, desc, month) {
   return outlier;
 }
 
-function buildSnapshotFromRawUploads(bankRows, cardRows1, cardRows2, baseline, calcMode) {
+function buildSnapshotFromRawUploads(bankRows, cardRows1, cardRows2, calcMode) {
   const byMonth = {};
   const categoryByMonth = {}; // Track category-level actuals
   const mode = calcMode === "budget" ? "budget" : "cashflow";
@@ -1092,7 +1088,6 @@ function buildSnapshotFromRawUploads(bankRows, cardRows1, cardRows2, baseline, c
       r.incomeObserved = Number(r.incomeObserved.toFixed(2));
       r.cardPurchasesObserved = Number(r.cardPurchasesObserved.toFixed(2));
       r.bankExpensesObserved = Number(r.bankExpensesObserved.toFixed(2));
-      r.baselineExpenses = Number(baseline.toFixed(2));
       r.incomeTotalForMonth = Number((r.incomeObserved + r.incomeBackfill).toFixed(2));
       if (mode === "cashflow") {
         r.knownExpensesTotal = Number(r.bankExpensesObserved.toFixed(2));
@@ -1112,16 +1107,11 @@ function setStatus(msg) {
 }
 
 function normalizeProfile(raw) {
-  const baseline = toNum(raw?.baselineBudget);
-  const savings = toNum(raw?.monthlySavingsGoal);
   const preferredMode = raw?.preferredMode === "budget" ? "budget" : "cashflow";
 
   return {
     name: String(raw?.name || "").trim(),
-    bankResource: String(raw?.bankResource || "").trim(),
-    baselineBudget: baseline > 0 ? baseline : DEFAULT_PROFILE.baselineBudget,
     preferredMode,
-    monthlySavingsGoal: savings >= 0 ? savings : 0,
   };
 }
 
@@ -1178,26 +1168,15 @@ function applyProfileToUi() {
   const p = state.profile || DEFAULT_PROFILE;
 
   const nameEl = document.getElementById("profile-name-input");
-  const bankEl = document.getElementById("profile-bank-resource-input");
-  const baselineEl = document.getElementById("profile-baseline-input");
   const modeEl = document.getElementById("profile-mode-input");
-  const savingsEl = document.getElementById("profile-savings-goal-input");
 
   if (nameEl) nameEl.value = p.name;
-  if (bankEl) bankEl.value = p.bankResource;
-  if (baselineEl) baselineEl.value = Number(p.baselineBudget).toFixed(2);
   if (modeEl) modeEl.value = p.preferredMode;
-  if (savingsEl) savingsEl.value = Number(p.monthlySavingsGoal).toFixed(2);
 }
 
 function applyProfileDefaultsToPipelineInputs(options = {}) {
   const p = state.profile || DEFAULT_PROFILE;
   const applyMode = Boolean(options.applyMode);
-
-  const baselineEl = document.getElementById("baseline-input");
-  if (baselineEl) {
-    baselineEl.value = Number(p.baselineBudget).toFixed(2);
-  }
 
   const calcModeEl = document.getElementById("calc-mode-input");
   if (calcModeEl) {
@@ -1211,17 +1190,11 @@ function applyProfileDefaultsToPipelineInputs(options = {}) {
 
 function readProfileFromUi() {
   const name = document.getElementById("profile-name-input")?.value || "";
-  const bankResource = document.getElementById("profile-bank-resource-input")?.value || "";
-  const baselineBudget = toNum(document.getElementById("profile-baseline-input")?.value || "");
   const preferredModeRaw = document.getElementById("profile-mode-input")?.value || "cashflow";
-  const monthlySavingsGoal = toNum(document.getElementById("profile-savings-goal-input")?.value || "");
 
   return normalizeProfile({
     name,
-    bankResource,
-    baselineBudget,
     preferredMode: preferredModeRaw,
-    monthlySavingsGoal,
   });
 }
 
@@ -1260,8 +1233,8 @@ function updatePipelineKnownExpensesDefinition(modeOverride) {
 
   if (summary) {
     summary.textContent = normalizedMode === "budget"
-      ? "Known Expenses currently follows budget mode: card purchases + bank expenses excluding card-payment transfers."
-      : "Known Expenses currently follows cashflow mode: all bank debits excluding card-payment transfers.";
+      ? "Combines bank expenses with observed credit-card purchases to show total spending regardless of when the card bill is paid. Best for comparing actual spending with the budget."
+      : "Uses bank credits and bank expenses to show cash movement through the bank account. Credit-card purchases are informational and are not added to Known Expenses.";
   }
 }
 
@@ -1833,7 +1806,6 @@ function downloadComputedSnapshotCsv() {
     "incomeObserved",
     "incomeBackfill",
     "incomeTotalForMonth",
-    "baselineExpenses",
     "cardPurchasesObserved",
     "bankExpensesObserved",
     "knownExpensesTotal",
@@ -1945,12 +1917,10 @@ async function runRawImports() {
     const cardRows1 = await parseInputFile("card1-csv-input");
     const cardRows2 = await parseInputFile("card2-csv-input");
 
-    const baselineRaw = document.getElementById("baseline-input").value;
-    const baseline = toNum(baselineRaw || "8812.24");
     const calcMode = document.getElementById("calc-mode-input").value || "cashflow";
 
-    const builtCashflow = buildSnapshotFromRawUploads(bankRows, cardRows1, cardRows2, baseline, "cashflow");
-    const builtBudget = buildSnapshotFromRawUploads(bankRows, cardRows1, cardRows2, baseline, "budget");
+    const builtCashflow = buildSnapshotFromRawUploads(bankRows, cardRows1, cardRows2, "cashflow");
+    const builtBudget = buildSnapshotFromRawUploads(bankRows, cardRows1, cardRows2, "budget");
     const built = calcMode === "budget" ? builtBudget : builtCashflow;
     if (!built.length) {
       setStatus("Could not derive monthly rows from uploads. Check CSV formats.");
@@ -1966,9 +1936,9 @@ async function runRawImports() {
     applyRoute("dashboard");
     window.location.hash = "dashboard";
     if (calcMode === "cashflow") {
-      setStatus(`UI updated (${built.length} months): cashflow mode uses bank credits as income and all bank debits (including card payments) as expenses; card spend is shown as informational only.`);
+      setStatus(`UI updated (${built.length} months): Cashflow mode uses bank credits and bank expenses to show cash movement. Credit-card purchases are informational only.`);
     } else {
-      setStatus(`UI updated (${built.length} months): budget mode uses observed spend (card purchases + bank expenses excluding card-payment transfers) and compares it against baseline budget.`);
+      setStatus(`UI updated (${built.length} months): Budget mode combines bank expenses with observed credit-card purchases to show total spending regardless of payment timing.`);
     }
   } catch (err) {
     setStatus(`Import failed: ${err.message}`);

@@ -32,7 +32,7 @@
   <section class="masthead" id="dashboard">
     <div>
       <h1 class="masthead-title">Income vs Expense Snapshot</h1>
-      <p class="masthead-subtitle">Upload statements. Get monthly cashflow and budget tracking.</p>
+      <p class="masthead-subtitle">Based on Chase bank and credit card transactions.</p>
     </div>
     <div class="masthead-meta">
       <div id="months-loaded">Months loaded: --</div>
@@ -67,7 +67,7 @@
         <div class="kpi-value" id="kpi-net">--</div>
       </article>
       <article class="kpi-card" title="Mode-dependent card context. In cashflow this is card payments from bank debits; in budget this is card purchases from card feeds.">
-        <div class="kpi-label">Card Spend (Info) <span class="help-tip" tabindex="0" data-tip="Mode-dependent card context. Cashflow shows card payments; Budget shows card purchases.">?</span></div>
+        <div class="kpi-label">Card Spend (Info) <span class="help-tip" tabindex="0" data-tip="Observed card purchases. Included in Known Expenses in Budget mode; informational only in Cashflow mode.">?</span></div>
         <div class="kpi-value" id="kpi-card">--</div>
       </article>
       <article class="kpi-card" title="Bank debit expenses observed for the selected month.">
@@ -167,13 +167,6 @@
           <label for="card2-csv-input">3. Credit card CSV (day-to-day card)</label>
           <input id="card2-csv-input" type="file" accept=".csv,text/csv">
         </div>
-        <div class="import-field">
-          <label for="baseline-input">Baseline monthly expenses <span class="help-tip" tabindex="0" data-tip="Monthly baseline budget (typically annual budget divided by 12). Used for planning and annual tracking.">?</span></label>
-          <div class="money-input-wrap">
-            <span class="money-prefix" aria-hidden="true">$</span>
-            <input id="baseline-input" type="number" step="0.01" value="8812.24" title="Monthly baseline budget (typically annual budget divided by 12).">
-          </div>
-        </div>
         <div class="import-field calc-mode-field">
           <label for="calc-mode-input">Calculation mode <span class="help-tip" tabindex="0" data-tip="Use Cashflow mode to match real bank balance movement (credits in, debits out). Use Budget mode to compare observed spending against baseline budget.">?</span></label>
           <select id="calc-mode-input" title="Cashflow mode uses bank credits/debits. Budget mode uses observed spend (card purchases + bank expenses excluding card-payment transfers) for budget comparison.">
@@ -228,36 +221,19 @@
           <input id="profile-name-input" type="text" placeholder="Your name or household label" maxlength="80">
         </div>
         <div class="import-field">
-          <label for="profile-bank-resource-input">Primary bank resource</label>
-          <input id="profile-bank-resource-input" type="text" placeholder="Example: Chase Checking" maxlength="80">
-        </div>
-        <div class="import-field">
-          <label for="profile-baseline-input">Default monthly baseline budget</label>
-          <div class="money-input-wrap">
-            <span class="money-prefix" aria-hidden="true">$</span>
-            <input id="profile-baseline-input" type="number" step="0.01" min="0" placeholder="8812.24">
-          </div>
-        </div>
-        <div class="import-field">
           <label for="profile-mode-input">Preferred calculation mode</label>
           <select id="profile-mode-input">
             <option value="cashflow">Cashflow actual (bank credits vs bank debits)</option>
             <option value="budget">Budget + observed spending (advanced)</option>
           </select>
         </div>
-        <div class="import-field">
-          <label for="profile-savings-goal-input">Monthly savings goal (optional)</label>
-          <div class="money-input-wrap">
-            <span class="money-prefix" aria-hidden="true">$</span>
-            <input id="profile-savings-goal-input" type="number" step="0.01" min="0" placeholder="0.00">
-          </div>
-        </div>
+
       </div>
       <div class="profile-actions">
         <button class="btn btn-solid-dark" id="save-profile">Save Profile</button>
         <button class="btn" id="reset-profile">Reset Profile</button>
       </div>
-      <p class="profile-status" id="profile-status">Saved profile values are stored in this browser and used as defaults for imports.</p>
+      <p class="profile-status" id="profile-status">Your name and preferred calculation mode are saved in this browser.</p>
     </section>
   </main>
 
