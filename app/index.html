@@ -177,7 +177,6 @@
       </div>
       <div class="import-actions">
         <button class="btn btn-solid-dark" id="run-imports" title="Recompute dashboard results from uploaded raw files using the selected calculation mode.">Show Results in UI</button>
-        <button class="btn" id="download-computed" title="Export currently computed monthly rows as CSV.">Download Computed Snapshot CSV</button>
         <button class="btn" id="clear-imports" title="Clear selected files from upload fields.">Clear Uploads</button>
       </div>
       <p class="import-help">
@@ -201,13 +200,18 @@
 
     <section class="panel" id="notes" data-route="notes">
       <div class="panel-header">
-        <h2>Data Notes</h2>
+        <h2>How This Budget App Works</h2>
       </div>
       <ul class="notes-list">
-        <li>Bank CSV is source of truth for Zelle/check-mailing expenses when available.</li>
-        <li>Credit card expenses are from card activity CSV sale lines only.</li>
-        <li>To compute in-browser results: upload bank CSV + 2 credit card CSV files in Import Pipeline, then click Show Results in UI.</li>
-        <li>The top-right Load Snapshot CSV option is optional and only for already-built snapshot files.</li>
+        <li><strong>Import Pipeline:</strong> Upload Chase bank CSV + 2 credit card CSVs to generate monthly cashflow and spending data.</li>
+        <li><strong>Persistence:</strong> Last successful import is automatically saved and restored when you reload the app.</li>
+        <li><strong>Calculation Modes:</strong> Cashflow mode shows bank movement only. Budget mode combines bank expenses + observed credit card purchases for total spending comparison.</li>
+        <li><strong>Budget Source:</strong> Monthly budget comes from <code>data/config/Budget.csv</code>, maintained via external Excel workbook.</li>
+        <li><strong>Bank Categorization:</strong> Expense categories use <code>data/config/Bank rules.csv</code> rules applied in order (first match wins).</li>
+        <li><strong>Credit Card Categories:</strong> Chase-provided category field used directly; uncategorized transactions tracked as blank.</li>
+        <li><strong>Outlier Handling:</strong> Transactions ≥ $10,000 are flagged as outliers and excluded from normal monthly analysis.</li>
+        <li><strong>Category Variance:</strong> Monthly category comparisons have timing limitations for irregular expenses (e.g., Taxes). See annual tracking for multi-month patterns.</li>
+        <li><strong>YTD Analysis:</strong> Year-to-date tracking and guidance are computed from monthly data; category-level YTD analysis is a future enhancement.</li>
       </ul>
     </section>
 

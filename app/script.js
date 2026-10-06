@@ -1795,39 +1795,6 @@ function renderAll() {
   setStatus(`Results loaded: ${state.rows.length} months now visible in UI.`);
 }
 
-function downloadComputedSnapshotCsv() {
-  if (!state.rows.length) {
-    setStatus("No computed data available yet. Run imports or load snapshot first.");
-    return;
-  }
-
-  const columns = [
-    "month",
-    "incomeObserved",
-    "incomeBackfill",
-    "incomeTotalForMonth",
-    "cardPurchasesObserved",
-    "bankExpensesObserved",
-    "knownExpensesTotal",
-    "netObservedMinusKnownExpenses",
-  ];
-
-  const header = columns.join(",");
-  const body = state.rows
-    .map((row) => columns.map((col) => `"${String(row[col] ?? "").replace(/"/g, '""')}"`).join(","))
-    .join("\n");
-
-  const csv = `${header}\n${body}`;
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  const stamp = new Date().toISOString().slice(0, 10);
-  a.href = url;
-  a.download = `income-vs-expense-snapshot-computed-${stamp}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
 async function loadDefaultCsv(options = {}) {
   // No snapshot available - only pipeline imports supported
   // Try to restore last pipeline import from localStorage
@@ -2014,7 +1981,6 @@ function bindUi() {
   // Pipeline-only workflow - no snapshot buttons
 
   document.getElementById("run-imports").addEventListener("click", runRawImports);
-  document.getElementById("download-computed").addEventListener("click", downloadComputedSnapshotCsv);
   document.getElementById("clear-imports").addEventListener("click", clearImports);
 
   const saveProfileBtn = document.getElementById("save-profile");

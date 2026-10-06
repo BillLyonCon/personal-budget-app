@@ -18,7 +18,7 @@ When the budget needs to be updated:
 ### Application Budget Configuration
 **File:** `data/config/Budget.csv`
 - **Columns:** Category, Subcategory, Monthly Budget
-- **Current:** 23 categories with $10,280.58 monthly budget total
+- **Current:** 23 budget rows across 13 categories, totaling $10,280.58 per month.
 - **Loaded:** On application startup
 - **Usage:**
   - Monthly Budget KPI displays total
@@ -52,7 +52,6 @@ Use CSV as the primary import format for your bank and credit card statements.
 - Structured data format ensures accurate parsing
 - Direct import to web UI without extra processing steps
 - Better month-by-month reconciliation
-- Works with any bank that supports CSV export
 
 ### Chase.com Export Procedure
 
@@ -91,3 +90,18 @@ After uploading your files in the web UI:
 2. Categorized transactions are grouped by category and month
 3. Monthly actuals are compared against budget amounts from data/config/Budget.csv
 4. Results display in the dashboard with budget variance analysis
+
+#### Calculation Modes
+
+**Cashflow actual**
+- Uses bank credits and bank expenses to show cash movement through the bank account.
+- Credit-card purchases are informational and are not added to Known Expenses.
+
+**Budget + observed spending**
+- Combines bank expenses with observed credit-card purchases to show total spending regardless of when the card bill is paid.
+- Best for comparing actual spending with the budget.
+
+
+#### Last Import Persistence
+
+The last successful pipeline import is saved in the browser and automatically restored when the application is reopened. Normally, statements do not need to be imported again simply because the application or local server was restarted.
