@@ -924,6 +924,33 @@ select {
   font-size: .86rem;
 }
 
+/* YTD Category Table */
+.ytd-category-table {
+  width: 100%;
+  margin-top: 1rem;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.ytd-category-table thead {
+  background-color: #f1f5f9;
+}
+
+.ytd-category-table th,
+.ytd-category-table td {
+  padding: 0.56rem 0.62rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.ytd-category-table th {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
 .table-wrap {
   overflow-x: auto;
 }
@@ -948,6 +975,23 @@ th {
 }
 
 .right { text-align: right; }
+
+.variance-over {
+  background-color: #fef3c7;
+}
+
+.variance-under {
+  background-color: #dbeafe;
+}
+
+.variance-neutral {
+  background-color: transparent;
+}
+
+.numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
 
 .notes-list {
   margin: 0;

@@ -129,6 +129,24 @@
       <div class="spike-narrative" id="spike-narrative"></div>
     </section>
 
+    <section class="panel" data-route="dashboard">
+      <div class="panel-header">
+        <h2>YTD Category Budget vs Actual</h2>
+      </div>
+      <table class="ytd-category-table" id="ytd-category-table">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th class="numeric">YTD Budget</th>
+            <th class="numeric">YTD Actual</th>
+            <th class="numeric">Variance</th>
+          </tr>
+        </thead>
+        <tbody id="ytd-category-tbody">
+        </tbody>
+      </table>
+    </section>
+
     <section class="panel" id="months" data-route="months">
       <div class="panel-header">
         <h2>Monthly Net Trend</h2>
@@ -136,16 +154,7 @@
       <div class="trend-list" id="trend-list"></div>
     </section>
 
-    <section class="panel" data-route="months">
-      <div class="panel-header">
-        <h2>Category Budget vs Actual (Selected Month)</h2>
-      </div>
-      <div class="category-legend">
-        <span class="legend-item"><span class="legend-swatch budget"></span>Budget</span>
-        <span class="legend-item"><span class="legend-swatch actual"></span>Actual</span>
-      </div>
-      <div class="category-chart" id="category-chart"></div>
-    </section>
+
 
     <section class="panel" id="pipeline" data-route="pipeline">
       <div class="panel-header">

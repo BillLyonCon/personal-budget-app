@@ -1421,7 +1421,7 @@ function renderKpis(month) {
   renderModeDifferenceCallout(month);
 
   renderFlaggedTransactions(month);
-  renderCategoryChart(month);
+  renderYtdCategoryAnalysis(state.selectedYear);
   renderDashboardTrendlines();
   renderSpikeNarrative();
 }
@@ -1451,6 +1451,111 @@ function renderFlaggedTransactions(month) {
     </div>
   `;
   container.innerHTML = html;
+}
+
+function computeYtdCategoryAnalysis(year) {
+  if (!year) year = state.selectedYear;
+  if (!year) return null;
+
+  // Get all rows for the selected year, sorted by month
+  const yearRows = rowsForYear(year);
+  if (!yearRows.length) return null;
+
+  // Latest month determines the YTD period length
+  const latestMonth = yearRows[yearRows.length - 1].month;
+  const latestMonthNum = monthIndexFromMonth(latestMonth);
+
+  // YTD Budget multiplier = calendar month number (1-12)
+  // Example: October (month 10) = multiply by 10
+  const ytdMultiplier = latestMonthNum;
+
+  // YTD includes all months from January through latest month
+  const ytdMonths = yearRows.filter((r) => {
+    const m = monthIndexFromMonth(r.month);
+    return m <= latestMonthNum;
+  });
+
+  // Normalize and collect all categories from Budget.csv and actuals
+  // Use normalizeChartCategoryKey to ensure "Solar Loan" doesn't duplicate
+  const normalizedBudget = mergeForChart(state.budgetByCategory || {});
+  const normalizedBudgetKeys = Object.keys(normalizedBudget);
+
+  const allNormalizedActualCategories = new Set();
+  ytdMonths.forEach((r) => {
+    const monthActuals = state.categoryActualByMonth[r.month] || {};
+    const normalizedMonthActuals = mergeForChart(monthActuals);
+    Object.keys(normalizedMonthActuals).forEach((cat) => allNormalizedActualCategories.add(cat));
+  });
+
+  // Combine normalized budget and actual categories
+  const allCategories = new Set([...normalizedBudgetKeys, ...allNormalizedActualCategories]);
+
+  // Calculate YTD for each category
+  const ytdData = [];
+  Array.from(allCategories).forEach((category) => {
+    // YTD Budget = monthly budget × calendar month number of latest month
+    const monthlyBudget = toNum(normalizedBudget[category] || 0);
+    const ytdBudget = monthlyBudget * ytdMultiplier;
+
+    // YTD Actual = sum of actuals for all months in YTD period (normalized)
+    let ytdActual = 0;
+    ytdMonths.forEach((r) => {
+      const monthActuals = state.categoryActualByMonth[r.month] || {};
+      const normalizedMonthActuals = mergeForChart(monthActuals);
+      ytdActual += toNum(normalizedMonthActuals[category] || 0);
+    });
+
+    const variance = ytdActual - ytdBudget;
+
+    ytdData.push({
+      category,
+      displayName: categoryDisplayName(category),
+      ytdBudget: Number(ytdBudget.toFixed(2)),
+      ytdActual: Number(ytdActual.toFixed(2)),
+      variance: Number(variance.toFixed(2)),
+    });
+  });
+
+  // Sort by largest positive variance first (over-budget categories at top)
+  ytdData.sort((a, b) => b.variance - a.variance);
+
+  return {
+    year,
+    latestMonth,
+    ytdMultiplier,
+    ytdMonths: ytdMonths.map((r) => r.month),
+    categories: ytdData,
+  };
+}
+
+function renderYtdCategoryAnalysis(year) {
+  const ytdAnalysis = computeYtdCategoryAnalysis(year);
+
+  const tableBody = document.getElementById("ytd-category-tbody");
+
+  if (!tableBody) return;
+
+  if (!ytdAnalysis || !ytdAnalysis.categories.length) {
+    tableBody.innerHTML = '<tr><td colspan="4" class="cat-empty">No categories to display.</td></tr>';
+    return;
+  }
+
+  const cats = ytdAnalysis.categories;
+
+  // Render table with YTD Budget, YTD Actual, and Variance
+  const tableHtml = cats.map((c) => {
+    const varianceClass = c.variance > 0 ? "variance-over" : (c.variance < 0 ? "variance-under" : "variance-neutral");
+    return `
+      <tr class="${varianceClass}">
+        <td>${c.displayName}</td>
+        <td class="numeric">${money.format(c.ytdBudget)}</td>
+        <td class="numeric">${money.format(c.ytdActual)}</td>
+        <td class="numeric">${money.format(c.variance)}</td>
+      </tr>
+    `;
+  }).join("");
+
+  tableBody.innerHTML = tableHtml;
 }
 
 function renderCategoryChart(month) {
