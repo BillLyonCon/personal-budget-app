@@ -1647,6 +1647,7 @@ function computeAnnualTracking(year) {
   const annualBudget = monthlyBudget * 12;
 
   const actualByMonth = {};
+  const incomeByMonth = {};
   yearRows.forEach((r) => {
     const mi = monthIndexFromMonth(r.month);
     if (!mi) return;
@@ -1665,13 +1666,19 @@ function computeAnnualTracking(year) {
     actualByMonth[mi] = (hasBankField || hasCardField)
       ? observed
       : known;
+
+    // Collect income by month
+    const income = toNum(r.incomeTotalForMonth || r.incomeObserved);
+    incomeByMonth[mi] = income;
   });
 
   let actualYtd = 0;
+  let incomeYtd = 0;
   let latestMonth = 0;
   for (let m = 1; m <= 12; m += 1) {
     if (Object.prototype.hasOwnProperty.call(actualByMonth, m)) {
       actualYtd += toNum(actualByMonth[m]);
+      incomeYtd += toNum(incomeByMonth[m] || 0);
       latestMonth = m;
     }
   }
@@ -1704,6 +1711,7 @@ function computeAnnualTracking(year) {
     monthlyBudget,
     annualBudget,
     latestMonth,
+    incomeYtd,
     actualYtd,
     budgetYtd,
     varianceYtd,
@@ -1717,7 +1725,7 @@ function computeAnnualTracking(year) {
 }
 
 function resetAnnualSummary() {
-  ["annual-budget", "annual-actual-ytd", "annual-remaining", "annual-reduction"].forEach((id) => {
+  ["annual-budget", "annual-income-ytd", "annual-actual-ytd", "annual-remaining", "annual-reduction"].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.textContent = "--";
   });
@@ -1725,12 +1733,14 @@ function resetAnnualSummary() {
 
 function renderAnnualSummary(annual) {
   const annualBudgetEl = document.getElementById("annual-budget");
+  const annualIncomeEl = document.getElementById("annual-income-ytd");
   const annualActualEl = document.getElementById("annual-actual-ytd");
   const annualRemainingEl = document.getElementById("annual-remaining");
   const annualReductionEl = document.getElementById("annual-reduction");
-  if (!annualBudgetEl || !annualActualEl || !annualRemainingEl || !annualReductionEl) return;
+  if (!annualBudgetEl || !annualIncomeEl || !annualActualEl || !annualRemainingEl || !annualReductionEl) return;
 
   annualBudgetEl.textContent = money.format(annual.annualBudget);
+  annualIncomeEl.textContent = money.format(annual.incomeYtd);
   annualActualEl.textContent = money.format(annual.actualYtd);
   annualRemainingEl.textContent = money.format(annual.remainingBudget);
 
