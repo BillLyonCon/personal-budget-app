@@ -13,7 +13,7 @@ Home,Home maintenance,$500.00
 Elias,Elias support,$833.33
 Bills & Utilities,Phone,$50.00
 Bills & Utilities,Internet,$70.00
-Health & Wellness,Dental,"$2,000.00"
+Health & Wellness,Dental,"$1,500.00"
 Health & Wellness,CVS pharmacy,$50.00
 Health & Wellness,Penny vet visits,$41.67
 Bills & Utilities,Penny meds,$38.33
@@ -23,3 +23,5 @@ Shopping,Amazon,$150.00
 Professional Services,"GitHub, inspections",$20.00
 Taxes,"Fed, Local","$1,666.67"
 Gifts & donations,Donations,$30.00
+Travel,"Hotels, AirBNB, airfare",$50.00
+Entertainment,concerts,$50.00
