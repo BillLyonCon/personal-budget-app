@@ -2169,8 +2169,6 @@ function bindUi() {
     applyRoute(routeFromHash());
   });
 
-  applyRoute(routeFromHash());
-
   // Load vendor mapping and budget categories, then attempt to restore from localStorage
   (async () => {
     try {
@@ -2197,6 +2195,9 @@ function bindUi() {
         console.log("[INIT] Loading Bank rules...");
         await loadBankRules();
       }
+
+      // Apply initial route AFTER all configs are loaded
+      applyRoute(routeFromHash());
 
       // Attempt to restore pipeline import from localStorage
       if (tryRestoreComputedState() && state.meta.source === "pipeline-import") {
