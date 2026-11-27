@@ -35,6 +35,7 @@ const state = {
   // Phase 2: Configuration loading
   budgetConfigRows: [], // Parsed rows from Budget.csv
   bankRulesRows: [], // Parsed rows from Bank rules.csv
+  checkOverrides: {}, // Check Number -> {category, subcategory} from Check overrides.csv
   budgetConfigValidation: {}, // Validation results from Budget.csv parsing
   bankRulesValidation: {}, // Validation results from Bank rules.csv parsing
   // Phase 3: Categorization statistics
@@ -799,6 +800,32 @@ async function loadBankRules() {
   }
 }
 
+async function loadCheckOverrides() {
+  const overridesPath = "../data/config/Check overrides.csv";
+  const overrides = {};
+  try {
+    const text = await readTextFromUrl(overridesPath);
+    parseCsv(text).forEach((row, idx) => {
+      const checkNumber = String(row["Check Number"] || "").trim();
+      const category = String(row.Category || "").trim();
+      const subcategory = String(row.Subcategory || "").trim();
+      if (!checkNumber || !category) {
+        console.warn(`[CHECK OVERRIDES] Row ${idx + 2}: missing Check Number or Category, skipped`);
+        return;
+      }
+      if (overrides[checkNumber]) {
+        console.warn(`[CHECK OVERRIDES] Row ${idx + 2}: duplicate check ${checkNumber}, first row wins`);
+        return;
+      }
+      overrides[checkNumber] = { category, subcategory };
+    });
+    console.log("[CHECK OVERRIDES] Loaded", Object.keys(overrides).length, "overrides");
+  } catch (e) {
+    console.warn("[CHECK OVERRIDES] Could not load:", e.message);
+  }
+  state.checkOverrides = overrides;
+}
+
 async function loadAndValidateConfiguration() {
   console.log("[CONFIG] Starting Phase 2: Configuration loading");
   const budgetResult = await loadBudgetConfig();
@@ -1017,7 +1044,8 @@ function buildSnapshotFromRawUploads(bankRows, cardRows1, cardRows2, calcMode) {
 
     // ===== PHASE 3: Bank Transaction Categorization via Bank rules.csv =====
     state.phase3Stats.bankTransactionsExamined++;
-    const ruleMatch = matchBankRuleByDescription(desc);
+    const checkNumber = String(r["Check or Slip #"] || "").trim();
+    const ruleMatch = (checkNumber && state.checkOverrides[checkNumber]) || matchBankRuleByDescription(desc);
     
     if (ruleMatch) {
       state.phase3Stats.bankTransactionsMatched++;
@@ -1967,6 +1995,8 @@ async function runRawImports() {
       console.log("[IMPORT] Bank rules empty, loading now...");
       await loadBankRules();
     }
+
+    await loadCheckOverrides();
     
     const required = ["bank-csv-input", "card1-csv-input", "card2-csv-input"];
     const missing = required.filter((id) => {
