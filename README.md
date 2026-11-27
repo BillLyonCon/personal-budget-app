@@ -41,6 +41,119 @@ Not included in v1:
 - scripts/ - development utilities (to be created in build phase)
 - data-samples/ - import examples for testing (to be created in build phase)
 
+## Session Start and Session End Protocol
+
+### Mandatory Session Startup Checklist
+
+Before making any code changes, AI assistants must:
+
+1. Read `README.md` completely.
+2. Read the most recent session log in `/session-logs`.
+3. Summarize:
+   - Current architecture
+   - Current development phase
+   - Open work items
+   - Known risks
+4. Confirm the current Git branch and commit:
+   ```bash
+   git branch --show-current
+   git rev-parse --short HEAD
+   ```
+5. Do not modify code until the review is complete.
+
+---
+
+### Development Rules
+
+- Make the smallest change necessary.
+- Verify functionality after each completed change.
+- Avoid unrelated refactoring.
+- Maintain backward compatibility whenever possible.
+- Do not assume a feature is safe because tests pass.
+- Verify actual application behavior.
+
+---
+
+### Mandatory Recovery Rule
+
+If the application becomes unstable:
+
+1. Stop feature development.
+2. Identify the last known-good working commit.
+3. Create a recovery branch before any repair attempts:
+   ```bash
+   git switch -c recovery-<commit>
+   ```
+4. Push the recovery branch:
+   ```bash
+   git push -u origin recovery-<commit>
+   ```
+
+---
+
+### Mandatory Session Completion Checklist
+
+A coding session is **not complete** until one of the following occurs:
+
+#### Option A - Successful Completion
+
+1. Verify:
+   - Dashboard works
+   - Import Pipeline works
+   - File selection works
+   - Existing functionality still works
+
+2. Update the session log.
+
+3. Review Git status:
+   ```bash
+   git status
+   ```
+
+4. Commit all successful work:
+   ```bash
+   git add .
+   git commit -m "<meaningful description>"
+   ```
+
+5. Push to GitHub:
+   ```bash
+   git push
+   ```
+
+6. Record:
+   - Branch name
+   - Commit hash
+   - Summary of changes
+
+#### Option B - Work in Progress
+
+If the session is ending without a final commit:
+
+1. Create a checkpoint branch:
+   ```bash
+   git switch -c checkpoint-<date>
+   ```
+
+2. Push the checkpoint branch:
+   ```bash
+   git push -u origin checkpoint-<date>
+   ```
+
+3. Record the checkpoint in the session log.
+
+---
+
+### Explicit Instruction for AI Assistants
+
+Before ending any successful coding session, remind the user to:
+
+1. Review `git status`.
+2. Commit the working state.
+3. Push the commit or checkpoint branch to GitHub.
+
+Do not assume this step has already been performed.
+
 ## Workflow Summary
 
 1. Import bank and credit card statement CSVs through Import Pipeline.
